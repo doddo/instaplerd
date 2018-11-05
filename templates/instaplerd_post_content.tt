@@ -1,0 +1,18 @@
+<div class="instapost">
+    <div class="instapost" style="width:[% width %]px; height:[% height %]px;" >
+        <img class="instapost" src="[% uri %]"/>
+    </div>
+    <p class="camerainfo">Snapped[% IF exif.Model %] with [% exif.Make %] [% exif.Model %] [% END %]
+        [% IF exif.DateTime %]on <i>[% exif.DateTime.ymd %] [% exif.DateTime.hms %]</i>[% END %]. </p>
+    <table cols="2">
+        <tr>
+            <th>key</th><th>value</th>
+        </tr>
+        [% FOREACH key IN exif.keys %]
+        <tr>
+            <td>[% key %]</td><td>[% exif.$key %]</td>
+        </tr>
+        [% END %]
+
+    </table>
+</div>
