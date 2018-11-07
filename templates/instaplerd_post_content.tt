@@ -8,11 +8,26 @@
         <tr>
             <th>key</th><th>value</th>
         </tr>
-        [% FOREACH key IN exif.keys %]
+        [% FOREACH key IN exif.keys.sort %]
         <tr>
             <td>[% key %]</td><td>[% exif.$key %]</td>
         </tr>
         [% END %]
-
     </table>
+
+
+    [% IF location %]
+    <table cols="2">
+        <tr>
+            <th>key</th><th>value</th>
+        </tr>
+        [% FOREACH key IN location.keys.sort %]
+        <tr>
+            <td>[% key %]</td><td>[% location.$key %]</td>
+        </tr>
+        [% END %]
+    </table>
+    [% END %]
+
+
 </div>

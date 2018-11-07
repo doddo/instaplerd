@@ -4,37 +4,17 @@ use strict;
 use warnings FATAL => 'all';
 use Moose;
 use Carp;
+use utf8;
+
 use Try::Tiny;
 use DateTime::Format::Strptime;
-
-use Geo::Coder::Bing;
-use Geo::Coder::Googlev3;
-use Geo::Coder::Mapquest;
+use Geo::Coordinates::Transform;
 use Geo::Coder::OSM;
-use Geo::Coder::Many;
-use Geo::Coder::Many::Util qw( country_filter );
-
-### Geo::Coder::Many object
-my $geocoder_many = Geo::Coder::Many->new( );
-
-$geocoder_many->add_geocoder({ geocoder => Geo::Coder::Googlev3->new });
-$geocoder_many->add_geocoder({ geocoder => Geo::Coder::Bing->new( key => 'GET ONE' )});
-$geocoder_many->add_geocoder({ geocoder => Geo::Coder::Mapquest->new( apikey => 'GET ONE' )});
-$geocoder_many->add_geocoder({ geocoder => Geo::Coder::OSM->new( sources => 'mapquest' )});
-
-$geocoder_many->set_filter_callback(country_filter('United States'));
-$geocoder_many->set_picker_callback('max_precision');
-
-for my $location (@locations) {
-  my $result = $geocoder_many->geocode({ location => $location });
-}
-
 
 has 'source_image' => (
     is => 'ro',
     isa => 'Image::Magick',
     required => 1,
-    trigger => \&_load_exif_data
 );
 
 has 'exifDateTimeParser' => (
@@ -47,13 +27,38 @@ has 'exifDateTimeParser' => (
     }
 );
 
+has '_geo_coder'=> (
+    is => 'ro',
+    isa => 'Geo::Coder::OSM',
+    default => sub {
+        Geo::Coder::OSM->new(
+         sources => [ 'osm' ],
+         debug   => 0
+        )
+    }
+);
+
+has '_geo_converter' => (
+    is => 'ro',
+    isa => 'Geo::Coordinates::Transform',
+    default => sub { new Geo::Coordinates::Transform() }
+);
+
+has 'geo_data' => (
+    is => 'rw',
+    isa => 'Maybe[HashRef]',
+    lazy_build => 1
+);
+
 has 'exif_data' => (
     is => 'rw',
     isa => 'HashRef',
+    lazy_build => 1
 );
 
-sub _load_exif_data {
+sub _build_exif_data {
     my $self = shift;
+    my %geo;
     my %exif = map { m/(?:exif:)?([^=]+)=([^=]+)/
     ? ($1, $2)
     : ()} split(/[\r\n]/, $self->source_image->Get('format', '%[EXIF:*]'));
@@ -67,7 +72,56 @@ sub _load_exif_data {
             }
         }
     }
-    $self->exif_data(\%exif);
+    return \%exif;
+}
+
+sub _build_geo_data {
+    my $self = shift;
+    my %geo;
+    my @lat_long_list;
+    my $lat_long;
+    my $geo_data;
+
+    while (my ($key, $value) = each %{$self->exif_data}){
+        if($key =~ /L(?:ong|at)itude/){
+            my $long_or_lat = lc($&);
+            # 18/1, 0/1, 613/100 <-- google pixel phone
+            # Degrees Minutes Decimal Seconds DD MM SS.SSSS
+            if ($value =~ m|
+                (?<degrees>\d+)/(?<degrees_f>\d+)[\s,]+
+                (?<minutes>\d+)/(?<minutes_f>\d+)[\s,]+
+                (?<seconds>\d+)/(?<seconds_f>\d+)
+                |x )
+            {
+                my $dms = sprintf "%s %s %s",
+                    $+{degrees} / $+{degrees_f},
+                    $+{minutes} / $+{minutes_f},
+                    $+{seconds} / $+{seconds_f};
+                $geo{$long_or_lat} = $dms;
+
+            } elsif ($value =~ m/[\s\d.]{3,}/) {
+                # Looks like it could be coordinates?
+                $geo{$long_or_lat} = $value;
+            } else {
+                carp sprintf "This: '%s' does not look like long / lat but key was: '%s'.", $value, $key;
+            }
+        }
+    }
+    if ($geo{latitude} && $geo{longitude}){
+        push(@lat_long_list, $geo{latitude}, $geo{longitude});
+
+        my $lat_long_dd = $self->_geo_converter->cnv_to_dd(\@lat_long_list);
+        $lat_long = join(',', @{$lat_long_dd});
+
+        if ($lat_long && $lat_long ne 'NaN'){
+            $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
+        } else {
+            carp sprintf "Could not make decimal lat/long from lat:%s long:%s", $geo{latitude}, $geo{longitude};
+        }
+    } else {
+        carp sprintf "No / not enough geo data to process. No lookup will occur.";
+    }
+    return $geo_data;
 }
 
 1;

@@ -1,5 +1,7 @@
 package InstaPlerd::Post;
 
+use utf8;
+
 use InstaPlerd::ExifHelper;
 
 use Plerd::Post;
@@ -47,7 +49,7 @@ has 'instaplerd_template_file' => (
 has 'json' => (
     is => 'ro',
     isa => 'JSON',
-    default => sub { JSON->new->allow_nonref }
+    default => sub { JSON->new->utf8->allow_nonref }
 );
 
 has 'exif_helper' => (
@@ -56,6 +58,12 @@ has 'exif_helper' => (
 );
 
 has 'resize_source_picture' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 1
+);
+
+has 'do_geo_lookup' => (
     is => 'rw',
     isa => 'Bool',
     default => 1
@@ -88,7 +96,7 @@ sub _process_source_file {
 
     my ($height, $width) = $self->source_image->Get('height', 'width');
 
-    my @ordered_attributes = qw( title time published_filename guid comment );
+    my @ordered_attributes = qw( title time published_filename guid comment location );
     try {
         my $source_meta = $self->json->decode($self->source_image->get('comment'));
         foreach my $key (@ordered_attributes) {
@@ -100,7 +108,6 @@ sub _process_source_file {
         }
         $attributes_need_to_be_written_out = 1;
     };
-
 
     $self->attributes(\%attributes);
 
@@ -152,6 +159,14 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
+    if ( $self->do_geo_lookup && !$attributes{ location } ) {
+        if ($self->exif_helper->geo_data) {
+            $attributes{ location } = $self->exif_helper->geo_data;
+            $attributes_need_to_be_written_out = 1;
+        }
+    }
+
+    # TODO
     if ( $attributes{ image } ) {
         $self->image( URI->new( $attributes{ image } ) );
         $self->image_alt( $attributes{ image_alt } || '' );
@@ -181,13 +196,14 @@ sub _process_source_file {
     $self->plerd->template->process(
         $self->instaplerd_template_file->open('<:encoding(utf8)'),
         {
-            plerd  => $self->plerd,
-            posts  => [ $self ],
-            title  => $self->title,
-            width  => $self->width,
-            heigth => $self->height,
-            exif   => $self->exif_helper->exif_data,
-            uri    => File::Spec->catfile('images', $attributes{ 'guid' },  $self->source_file->basename),
+            plerd    => $self->plerd,
+            posts    => [ $self ],
+            title    => $self->title,
+            width    => $self->width,
+            heigth   => $self->height,
+            exif     => $self->exif_helper->exif_data,
+            location => $attributes{ location } || undef,
+            uri      => File::Spec->catfile('images', $attributes{ 'guid' },  $self->source_file->basename),
             context_post => $self,
         },
 	    \$body,
