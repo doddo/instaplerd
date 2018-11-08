@@ -179,6 +179,9 @@ sub _process_source_file {
         $self->image_alt($self->plerd->image_alt || '');
     }
 
+    # fix rotation if need be
+    $destination_image->AutoOrient();
+
     $destination_image->Resize(
         'gravity'  => 'Center',
         'geometry' =>
