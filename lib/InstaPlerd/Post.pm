@@ -31,13 +31,13 @@ has 'source_image' => (
 has 'width' => (
         is      => 'ro',
         isa     => 'Int',
-        default => 480
+        default => 720
     );
 
 has 'height' => (
         is      => 'ro',
         isa     => 'Int',
-        default => 600
+        default => 840
     );
 
 has 'instaplerd_template_file' => (
@@ -201,7 +201,7 @@ sub _process_source_file {
             width        => $self->width,
             heigth       => $self->height,
             exif         => $self->exif_helper->exif_data,
-            location     => $attributes{ location } || undef,
+            location     => $attributes{ location }{ address } || undef,
             uri          => File::Spec->catfile('images', $attributes{ 'guid' }, $self->source_file->basename),
             context_post => $self,
         },
@@ -224,6 +224,8 @@ sub _process_source_file {
         $self->plerd->publication_path, 'images', $attributes{ 'guid' }));
 
     $self->filter->apply($destination_image);
+    # Remove all image metadata before publication (after filter in case it uses it for something...)
+    $destination_image->Strip();
 
     $destination_image->write(File::Spec->catfile(
         $self->plerd->publication_path, 'images', $attributes{ 'guid' }, $self->source_file->basename));
