@@ -22,6 +22,10 @@ use warnings FATAL => 'all';
 
 extends "Plerd::Post";
 
+sub file_type {
+    'jpe?g';
+}
+
 has 'source_image' => (
         is      => 'ro',
         isa     => 'Image::Magick',
@@ -81,6 +85,7 @@ has 'filter' => (
         isa     => 'InstaPlerd::Filter',
         default => sub {InstaPlerd::Filters::Artistic->new()}
     );
+
 
 sub _process_source_file {
     my $self = shift;
