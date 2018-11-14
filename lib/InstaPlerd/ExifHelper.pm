@@ -27,6 +27,11 @@ has 'exifDateTimeParser' => (
         }
     );
 
+has 'timestamp' => (
+        is      => 'rw',
+        isa     => 'Maybe[DateTime]'
+);
+
 has '_geo_coder' => (
         is      => 'ro',
         isa     => 'Geo::Coder::OSM',
@@ -58,7 +63,6 @@ has 'exif_data' => (
 
 sub _build_exif_data {
     my $self = shift;
-    my %geo;
     my %exif = map {m/(?:exif:)?([^=]+)=([^=]+)/
         ? ($1, $2)
         : ()} split(/[\r\n]/, $self->source_image->Get('format', '%[EXIF:*]'));
@@ -66,7 +70,11 @@ sub _build_exif_data {
     while (my ($key, $value) = each %exif) {
         if ($key =~ /Date/) {
             try {
-                $exif{$key} = $self->exifDateTimeParser->parse_datetime($value);
+                my $date = $self->exifDateTimeParser->parse_datetime($value);
+                $exif{$key} = $date;
+                if ($key eq 'DateTime') {
+                    $self->timestamp($date);
+                }
             } catch {
                 carp sprintf "can't make '%s': '%s' into DateTime object.", $key, $value;
             }
@@ -82,7 +90,7 @@ sub _build_geo_data {
     my $lat_long;
     my $geo_data;
 
-    while (my ($key, $value) = each %{$self->exif_data}) {
+    while (my ($key, $value) = each %{$self->exif_data()}) {
         if ($key =~ /L(?:ong|at)itude/) {
             my $long_or_lat = lc($&);
             # 18/1, 0/1, 613/100 <-- google pixel phone
@@ -116,6 +124,8 @@ sub _build_geo_data {
 
         if ($lat_long && $lat_long ne 'NaN') {
             $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
+            $$geo_data{latitude} ||= $geo{latitude};
+            $$geo_data{longitude} ||= $geo{longitude};
         }
         else {
             carp sprintf "Could not make decimal lat/long from lat:%s long:%s", $geo{latitude}, $geo{longitude};

@@ -3,6 +3,7 @@ package InstaPlerd::Post;
 use utf8;
 
 use InstaPlerd::ExifHelper;
+use InstaPlerd::Util;
 
 use Plerd::Post;
 use DateTime::Format::Strptime;
@@ -44,16 +45,16 @@ has 'height' => (
         default => 840
     );
 
+has 'image_compression' => (
+        is  => 'rw',
+        isa => 'Int',
+        default => 85
+    );
+
 has 'instaplerd_template_file' => (
         is         => 'ro',
         isa        => 'Path::Class::File',
         lazy_build => 1
-    );
-
-has 'json' => (
-        is      => 'ro',
-        isa     => 'JSON',
-        default => sub {JSON->new->utf8->allow_nonref}
     );
 
 has 'exif_helper' => (
@@ -86,6 +87,14 @@ has 'filter' => (
         default => sub {InstaPlerd::Filters::Artistic->new()}
     );
 
+has 'util' => (
+        is      => 'ro',
+        isa     => 'InstaPlerd::Util',
+        default => sub {InstaPlerd::Util->new()}
+
+    );
+
+
 
 sub _process_source_file {
     my $self = shift;
@@ -103,7 +112,8 @@ sub _process_source_file {
 
     my @ordered_attributes = qw(title time published_filename guid comment location);
     try {
-        my $source_meta = $self->json->decode($self->source_image->get('comment'));
+        my $source_meta = $self->util->load_image_meta($self->source_image);
+
         foreach my $key (@ordered_attributes) {
             $attributes{$key} = $$source_meta{$key} if exists $$source_meta{$key}
         };
@@ -131,7 +141,7 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
 
     }
-    $self->title($attributes{'title'});
+    $self->title($attributes{ title });
 
     if ($attributes{ time }) {
         eval {
@@ -200,6 +210,7 @@ sub _process_source_file {
         'geometry' => sprintf ("%ix%i", $self->width, $self->height),
     );
 
+
     $self->plerd->template->process(
         $self->instaplerd_template_file->open('<:encoding(utf8)'),
         {
@@ -218,13 +229,8 @@ sub _process_source_file {
     $self->body($body);
 
     if ($attributes_need_to_be_written_out) {
-        my $payload = $self->json->encode(\%attributes);
-
-        $self->source_image->Set("comment" => $payload);
-
-        my @outdata = $self->source_image->ImageToBlob();
-
-        $self->source_file->spew(iomode => '>:raw', @outdata);
+        $self->source_file->spew(iomode => '>:raw',
+            $self->util->save_image_meta($self->source_image, \%attributes));
     }
 
     # Here is where the magic happens
@@ -235,8 +241,10 @@ sub _process_source_file {
     # Remove all image metadata before publication (after filter in case it uses it for something...)
     $destination_image->Strip();
 
-    $destination_image->write(File::Spec->catfile(
-        $self->plerd->publication_path, 'images', $attributes{ 'guid' }, $self->source_file->basename));
+    $destination_image->write(
+        filename => File::Spec->catfile($self->plerd->publication_path, 'images',
+            $attributes{ 'guid' }, $self->source_file->basename),
+        compression => $self->image_compression);
 
 }
 
