@@ -264,13 +264,4 @@ sub _build_instaplerd_template_file {
     );
 }
 
-sub _create_title_from_filename {
-    my $self = shift;
-    my $filename = shift;
-    $filename =~ s/\.jpe?g//i;
-    $filename =~ s/_/ /g;
-    $filename =~ s/([\w']+)/\u\L$1/g;
-    return $filename;
-}
-
 1;
