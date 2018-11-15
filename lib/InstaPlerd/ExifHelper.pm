@@ -27,11 +27,6 @@ has 'exifDateTimeParser' => (
         }
     );
 
-has 'timestamp' => (
-        is      => 'rw',
-        isa     => 'Maybe[DateTime]'
-);
-
 has '_geo_coder' => (
         is      => 'ro',
         isa     => 'Geo::Coder::OSM',
@@ -58,8 +53,32 @@ has 'geo_data' => (
 has 'exif_data' => (
         is         => 'rw',
         isa        => 'HashRef',
-        lazy_build => 1
+        lazy_build => 1,
     );
+
+
+sub timestamp {
+    my $self = shift;
+    return ${$self->exif_data()}{ DateTime } || undef;
+}
+
+sub latitude {
+    my $self = shift;
+    return
+        ${$self->geo_data()}{ latitude } ||
+        ${$self->geo_data()}{ location }{ lat } ||
+        undef;
+}
+
+sub longitude {
+    my $self = shift;
+    return
+        ${$self->geo_data()}{ longitude } ||
+        ${$self->geo_data()}{ location }{ lon } ||
+        undef;
+
+}
+
 
 sub _build_exif_data {
     my $self = shift;
@@ -72,9 +91,6 @@ sub _build_exif_data {
             try {
                 my $date = $self->exifDateTimeParser->parse_datetime($value);
                 $exif{$key} = $date;
-                if ($key eq 'DateTime') {
-                    $self->timestamp($date);
-                }
             } catch {
                 carp sprintf "can't make '%s': '%s' into DateTime object.", $key, $value;
             }
@@ -124,8 +140,8 @@ sub _build_geo_data {
 
         if ($lat_long && $lat_long ne 'NaN') {
             $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
-            $$geo_data{latitude} ||= $geo{latitude};
-            $$geo_data{longitude} ||= $geo{longitude};
+            $$geo_data{latitude} ||= @{$lat_long_dd}[0];
+            $$geo_data{longitude} ||= @{$lat_long_dd}[1];
         }
         else {
             carp sprintf "Could not make decimal lat/long from lat:%s long:%s", $geo{latitude}, $geo{longitude};

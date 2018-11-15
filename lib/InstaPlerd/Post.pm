@@ -3,6 +3,7 @@ package InstaPlerd::Post;
 use utf8;
 
 use InstaPlerd::ExifHelper;
+use InstaPlerd::TitleGenerator;
 use InstaPlerd::Util;
 
 use Plerd::Post;
@@ -94,6 +95,11 @@ has 'util' => (
 
     );
 
+has 'title_generator' => (
+        is      => 'rw',
+        isa     => 'InstaPlerd::TitleGenerator',
+    );
+
 
 
 sub _process_source_file {
@@ -107,6 +113,8 @@ sub _process_source_file {
     $destination_image = $self->source_image->Clone();
     $self->exif_helper(
         InstaPlerd::ExifHelper->new(source_image => $self->source_image));
+    $self->title_generator(
+        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
 
     my ($height, $width) = $self->source_image->Get('height', 'width');
 
@@ -137,7 +145,7 @@ sub _process_source_file {
     }
 
     if (!$attributes{'title'}) {
-        $attributes{'title'} = $self->_create_title_from_filename($self->source_file->basename);
+        $attributes{'title'} = $self->title_generator->generate_title($self->source_file->basename);
         $attributes_need_to_be_written_out = 1;
 
     }
