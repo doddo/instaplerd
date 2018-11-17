@@ -37,7 +37,7 @@ has 'source_image' => (
 has 'width' => (
         is      => 'ro',
         isa     => 'Int',
-        default => 720
+        default => 847
     );
 
 has 'height' => (

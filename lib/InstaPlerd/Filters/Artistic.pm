@@ -15,9 +15,10 @@ sub apply {
 
     $source_image->Modulate(brightness => 110, saturation => 110, hue => 110);
     $source_image->ContrastStretch('5%');
-    $source_image->Shave(geometry => '11x11');
+    $source_image->Shave(geometry => '15x15');
+
+    $source_image->Border(geometry => '14x14', color => 'white');
     $source_image->Border(geometry => '1x1', color => 'gray');
-    $source_image->Border(geometry => '10x10', color => 'light gray');
     $source_image->Set(type => 'grayscale');
 
 }
