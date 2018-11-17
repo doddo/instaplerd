@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use feature qw/say/;
+use InstaPlerd::Util;
+use utf8;
+use v5.22;
+use Getopt::Long;
+use File::Basename qw/basename/;
+use Image::Magick;
+
+
+my @deltags;
+my $list;
+my $util = InstaPlerd::Util->new;
+my $length = 24;
+my $verbose;
+GetOptions ("length=i"  => \$length,
+              "list"    => \$list,
+              "deltag=s"  => \@deltags)
+or die("Error in command line arguments\n");
+
+while (<@ARGV>) {
+    printf "\nProcessing [%-s]:\n", basename($_);
+    my $im = Image::Magick->new;
+    $im->read($_);
+    my $meta = $util->load_image_meta($im);
+    if (do_stuff($_, $meta)){
+        my $sf=Image::Magick->new(magick=>'jpg');
+        $sf->BlobToImage($util->save_image_meta($im, $meta));
+        $sf->write(filename => $_);
+    }
+}
+
+sub do_stuff {
+    my $file = shift;
+    my $meta = shift;
+    my $indent = shift || 15;
+    my $item = shift || "";
+    my $change = 0;
+
+    foreach my $key (sort {$a cmp $b} keys %{$meta} ){
+        my $rel_key = $item eq "" ? $key : "$item.$key";
+
+        if ($key ~~ @deltags) {
+            printf "%${indent}s - %-s\n",  $rel_key, "*** DELETED ***";
+            delete ($$meta{$key});
+            $change++;
+        } else {
+            if (ref $$meta{$key} eq 'HASH') {
+                printf "%${indent}s = {\n", $rel_key;
+                do_stuff($file, $$meta{$key}, $indent + 20, $rel_key);
+                printf "    %${indent}s\n", "}";
+            } elsif (ref $$meta{$key} eq 'ARRAY') {
+                printf "%${indent}s = [%-s]\n",  $rel_key, join (', ', @{$$meta{$key}});
+            } else {
+               printf "%${indent}s = '%-s'\n",  $rel_key, $$meta{$key};
+            }
+        }
+    }
+    return $change;
+}
+
