@@ -11,6 +11,8 @@ requires 'Readonly';
 requires 'Try::Tiny';
 requires 'Software::License::MIT';
 requires 'Text::Sprintf::Named';
+requires 'Digest::MD5';
+requires 'JSON';
 
 on 'test' => sub {
     requires 'Test::More', '0.98';

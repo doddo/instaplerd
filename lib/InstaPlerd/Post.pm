@@ -1,21 +1,25 @@
 package InstaPlerd::Post;
 
 use utf8;
+use strict;
 
 use InstaPlerd::ExifHelper;
 use InstaPlerd::TitleGenerator;
 use InstaPlerd::Util;
 
+
 use Plerd::Post;
+
+use Path::Class::File;
 use DateTime::Format::Strptime;
+use Digest::MD5 qw(md5_hex);
 use JSON;
 use File::Path qw(mkpath);
+use File::Spec;
+use Image::Magick;
 use Moose;
 use Readonly;
-use File::Spec;
 use Try::Tiny;
-use Image::Magick;
-use strict;
 
 # Todo dynamically load
 use InstaPlerd::Filters::Artistic;
@@ -106,6 +110,7 @@ sub _process_source_file {
     my $self = shift;
     my %attributes;
     my $attributes_need_to_be_written_out = 0;
+    my $image_needs_to_be_published = 0;
     my $body;
     my $destination_image;
 
@@ -118,7 +123,7 @@ sub _process_source_file {
 
     my ($height, $width) = $self->source_image->Get('height', 'width');
 
-    my @ordered_attributes = qw(title time published_filename guid comment location);
+    my @ordered_attributes = qw(title time published_filename guid comment location checksum);
     try {
         my $source_meta = $self->util->load_image_meta($self->source_image);
 
@@ -219,6 +224,25 @@ sub _process_source_file {
     );
 
 
+    my $published_filename_jpg = $attributes { published_filename };
+    $published_filename_jpg =~ s/\.html?$/.jpeg/i;
+
+    my $target_jpg_file_path =  File::Spec->catfile(
+            $self->plerd->publication_path, 'images', $published_filename_jpg);
+
+    if ( -e $target_jpg_file_path && $attributes{ checksum }) {
+        my $fh = Path::Class::File->new($target_jpg_file_path);
+        my $checksum = md5_hex($fh->slurp(iomode => '<:raw'));
+        if ($checksum ne $attributes{ checksum }) {
+            $image_needs_to_be_published = 1;
+            $attributes_need_to_be_written_out =1;
+        }
+    } else {
+        $image_needs_to_be_published = 1;
+        $attributes_need_to_be_written_out = 1;
+    }
+
+
     $self->plerd->template->process(
         $self->instaplerd_template_file->open('<:encoding(utf8)'),
         {
@@ -229,31 +253,33 @@ sub _process_source_file {
             heigth       => $self->height,
             exif         => $self->exif_helper->exif_data,
             location     => $attributes{ location }{ address } || undef,
-            uri          => File::Spec->catfile('images', $attributes{ 'guid' }, $self->source_file->basename),
+            uri          => File::Spec->catfile('images', $target_jpg_file_path),
             context_post => $self,
         },
         \$body,
     ) || $self->plerd->_throw_template_exception($self->instaplerd_template_file);
     $self->body($body);
 
+    if ($image_needs_to_be_published) {
+         # Here is where the magic happens
+        mkpath(File::Spec->catdir(
+            $self->plerd->publication_path, 'images'));
+
+        $self->filter->apply($destination_image);
+        # Remove all image metadata before publication (after filter in case it uses it for something...)
+        $destination_image->Strip();
+
+        $destination_image->write(
+            filename => $target_jpg_file_path,
+            compression => $self->image_compression);
+
+        $attributes{ checksum } = md5_hex($destination_image->ImageToBlob());
+    }
+
     if ($attributes_need_to_be_written_out) {
         $self->source_file->spew(iomode => '>:raw',
             $self->util->save_image_meta($self->source_image, \%attributes));
     }
-
-    # Here is where the magic happens
-    mkpath(File::Spec->catdir(
-        $self->plerd->publication_path, 'images', $attributes{ 'guid' }));
-
-    $self->filter->apply($destination_image);
-    # Remove all image metadata before publication (after filter in case it uses it for something...)
-    $destination_image->Strip();
-
-    $destination_image->write(
-        filename => File::Spec->catfile($self->plerd->publication_path, 'images',
-            $attributes{ 'guid' }, $self->source_file->basename),
-        compression => $self->image_compression);
-
 }
 
 sub _build_instaplerd_template_file {
