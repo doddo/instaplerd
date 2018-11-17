@@ -59,8 +59,8 @@ sub location_with_random_precision {
     my $geo = $self->exif_helper->geo_data();
     my @loc;
 
-    if (defined $geo && defined $$geo{ location } && defined $$geo{ location }{ address }){
-        my $address = $$geo{ location }{ address };
+    if (defined $geo && defined $$geo{ address } && defined $$geo{ address }){
+        my $address = $$geo{ address };
         foreach my $interesting_key (qw/in-country in-state in-county
             in-city in-suburb at-road at-postcode at-cafe in-town at-marina/) {
             (my $at_or_in, my $location) = split /-/, $interesting_key, 2; # Nice
@@ -143,7 +143,9 @@ sub _make_great_title {
     );
     my %fmt_hash = $self->fmt_hash;
 
-    return $formatter->format({args => \%fmt_hash});
+    my $title = $formatter->format({args => \%fmt_hash});
+    chomp ($title);
+    return $title;
 }
 
 sub _capitalise {

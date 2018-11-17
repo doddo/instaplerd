@@ -3,6 +3,7 @@ package InstaPlerd::Util;
 use strict;
 use warnings FATAL => 'all';
 use Moose;
+use JSON;
 use Carp;
 use utf8;
 
