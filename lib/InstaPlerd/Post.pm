@@ -33,8 +33,8 @@ sub file_type {
 }
 
 has 'source_image' => (
-        is      => 'ro',
-        isa     => 'Image::Magick',
+        is      => 'rw',
+        isa     => 'Maybe[Image::Magick]',
         default => sub {Image::Magick->new()},
     );
 
@@ -253,7 +253,7 @@ sub _process_source_file {
             heigth       => $self->height,
             exif         => $self->exif_helper->exif_data,
             location     => $attributes{ location }{ address } || undef,
-            uri          => File::Spec->catfile('images', $target_jpg_file_path),
+            uri          => File::Spec->catfile('images', $published_filename_jpg),
             context_post => $self,
         },
         \$body,
@@ -280,6 +280,7 @@ sub _process_source_file {
         $self->source_file->spew(iomode => '>:raw',
             $self->util->save_image_meta($self->source_image, \%attributes));
     }
+    $self->source_image(undef);
 }
 
 sub _build_instaplerd_template_file {
