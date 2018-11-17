@@ -74,11 +74,12 @@ sub location_with_random_precision {
 
 sub fmt_hash {
     my $self = shift;
+    # TODO: fix this
     return (
         superlative => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
-        time_of_day => $self->_capitalise($self->time_of_day),
-        location_with_random_precision => $self->location_with_random_precision(),
-        season => $self->_capitalise($self->season)
+        time_of_day => $self->_capitalise($self->time_of_day) || 'Unknown time of day',
+        location_with_random_precision => $self->location_with_random_precision() || "Unknown location",
+        season => $self->_capitalise($self->season || "Unknown season")
     );
 }
 
@@ -116,10 +117,15 @@ sub _build_time_of_day {
 
 sub _build_season {
     my $self = shift;
+    my $m;
+    my $lat;
 
-    my $m = $self->exif_helper->timestamp->month;
-
-    my $lat = ${$self->exif_helper->geo_data()}{ latitude } || 1;
+    # TODO: Fix this
+    eval {
+        $m = $self->exif_helper->timestamp->month;
+        $lat = ${$self->exif_helper->geo_data()}{ latitude } || 1;
+    };
+    return undef if $@;
 
     if ($m >= 3 && $m < 6) {
         # March 1 to May 31;
