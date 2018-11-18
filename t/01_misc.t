@@ -7,6 +7,7 @@ use feature qw/say/;
 
 use DateTime;
 use Image::Magick;
+use Path::Class::File;
 
 use FindBin;
 
@@ -18,14 +19,13 @@ use InstaPlerd::Util;
 
 my $img = "$FindBin::Bin/source/betong_lion.jpg";
 
-my $im = Image::Magick->new();
-$im->read($img);
+my $img_file = Path::Class::File->new($img);
 
-my $eh = InstaPlerd::ExifHelper->new(source_image => $im);
+my $eh = InstaPlerd::ExifHelper->new(source_file => $img_file);
 my $tg = InstaPlerd::TitleGenerator->new(exif_helper => $eh);
 my $util = InstaPlerd::Util->new();
 
-my $meta = $util->load_image_meta($im);
+my $meta = $util->load_image_meta($img);
 $eh->geo_data($$meta{location});
 
 is (ref $eh->exif_data(), 'HASH', 'exif data is HASH');
