@@ -12,17 +12,27 @@ my @deltags;
 my $list;
 my $util = InstaPlerd::Util->new;
 my $length = 24;
-my $verbose;
+my $clear = 0;
+
 GetOptions ("length=i"  => \$length,
               "list"    => \$list,
+              "clear"   => \$clear,
               "deltag=s"  => \@deltags)
 or die("Error in command line arguments\n");
 
 while (<@ARGV>) {
     printf "\nProcessing [%-s]:\n", basename($_);
-    my $meta = $util->load_image_meta($_);
-    if (do_stuff($_, $meta)){
-        $util->save_image_meta($_, $meta);
+    if ($clear) {
+        die "can't use clear in combination with 'list', 'deltag' ...\n"
+            if ($list || @deltags);
+        say "Deleting all InstaPlerd meta...";
+        $util->save_image_meta($_, {});
+    }
+    else {
+        my $meta = $util->load_image_meta($_);
+        if (do_stuff($_, $meta)) {
+            $util->save_image_meta($_, $meta);
+        }
     }
 }
 

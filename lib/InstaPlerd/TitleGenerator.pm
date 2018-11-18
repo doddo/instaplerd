@@ -54,6 +54,19 @@ has 'superlative_list' => (
         }
     );
 
+sub interesting_fact {
+    # TODO WIP
+    my $self = shift;
+    my @interesting_facts;
+
+    if (${$self->exif_helper->geo_data()}{ GPSAltitude }) {
+        if (${$self->exif_helper->geo_data()}{ GPSAltitude } =~ /^[^0]/){
+            push @interesting_facts, ${$self->exif_helper->geo_data()}{ GPSAltitude };
+        }
+    }
+
+}
+
 sub location_with_random_precision {
     my $self = shift;
     my $geo = $self->exif_helper->geo_data();
@@ -61,6 +74,7 @@ sub location_with_random_precision {
 
     if (defined $geo && defined $$geo{ address } && defined $$geo{ address }){
         my $address = $$geo{ address };
+        # TODO F: FAN FIXA
         foreach my $interesting_key (qw/in-country in-state in-county
             in-city in-suburb at-road at-postcode at-cafe in-town at-marina/) {
             (my $at_or_in, my $location) = split /-/, $interesting_key, 2; # Nice
@@ -77,9 +91,9 @@ sub fmt_hash {
     # TODO: fix this
     return (
         superlative => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
-        time_of_day => $self->_capitalise($self->time_of_day) || 'Unknown time of day',
-        location_with_random_precision => $self->location_with_random_precision() || "Unknown location",
-        season => $self->_capitalise($self->season || "Unknown season")
+        time_of_day => $self->_capitalise($self->time_of_day) || '',
+        location_with_random_precision => $self->location_with_random_precision() || '',
+        season => $self->_capitalise($self->season || '')
     );
 }
 
@@ -123,21 +137,21 @@ sub _build_season {
     # TODO: Fix this
     eval {
         $m = $self->exif_helper->timestamp->month;
-        $lat = ${$self->exif_helper->geo_data()}{ latitude } || 1;
+        $lat = ${$self->exif_helper->geo_data()}{ latitude } || 'North';
     };
     return undef if $@;
 
     if ($m >= 3 && $m < 6) {
         # March 1 to May 31;
-        return $lat > 0 ? 'spring': ('fall', 'autumn')[rand 2]
+        return $lat eq 'North' ? 'spring': ('fall', 'autumn')[rand 2]
     } elsif ($m < 9){
         # June 1 to August 31
-        return $lat > 0 ? 'summer':'winter'
+        return $lat eq 'North' ? 'summer':'winter'
     } elsif ($m < 12){
          # September 1 to November 30;
-        return $lat > 0 ? ('fall', 'autumn')[rand 2]:'spring'
+        return$lat eq 'North' ? ('fall', 'autumn')[rand 2]:'spring'
     } else {
-        return $lat > 0 ? 'winter':'summer'
+        return $lat eq 'North' ? 'winter':'summer'
     }
 }
 

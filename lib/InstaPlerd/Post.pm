@@ -112,8 +112,6 @@ sub _process_source_file {
     my $attributes_need_to_be_written_out = 0;
     my $image_needs_to_be_published = 0;
     my $body;
-    my $destination_image;
-
 
     my @ordered_attributes = qw(title time published_filename guid comment location checksum);
     try {
@@ -130,8 +128,7 @@ sub _process_source_file {
 
     $self->exif_helper(
         InstaPlerd::ExifHelper->new
-            (source_file => $self->source_file,
-            geo_data => $attributes{ location }));
+            (source_file => $self->source_file));
     $self->title_generator(
         InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
 
@@ -189,7 +186,10 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
-    if ($self->do_geo_lookup && !$attributes{ location }) {
+    if ( $attributes{ location } && %{ $attributes{ location } } ) {
+        $self->exif_helper->geo_data( $attributes{ location } );
+    }
+    elsif ($self->do_geo_lookup) {
         if ($self->exif_helper->geo_data) {
             $attributes{ location } = $self->exif_helper->geo_data;
             $attributes_need_to_be_written_out = 1;
@@ -247,7 +247,7 @@ sub _process_source_file {
     if ($image_needs_to_be_published) {
         # this is expensive memory-wise
         $self->source_image->read($self->source_file);
-        $destination_image = $self->source_image->Clone();
+        my $destination_image = $self->source_image->Clone();
 
         # fix rotation if need be
         $destination_image->AutoOrient();
@@ -274,6 +274,7 @@ sub _process_source_file {
         # Remove all image metadata before publication (after filter in case it uses it for something...)
         $destination_image->Strip();
 
+        # TODO: make path/ name more uniq
         $destination_image->write(
             filename => $target_jpg_file_path,
             compression => $self->image_compression);

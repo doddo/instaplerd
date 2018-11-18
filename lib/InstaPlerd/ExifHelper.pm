@@ -35,7 +35,7 @@ has 'exiftool' => (
         isa     => 'Image::ExifTool',
         default => sub {
             my $tool = Image::ExifTool->new();
-            $tool->Options(CoordFormat => q{%d %d %+.6f});
+            $tool->Options(CoordFormat => q{%d %d %+.4f});
             return $tool;
         }
     );
@@ -124,7 +124,12 @@ sub _build_geo_data {
     if (${$self->exif_data()}{ GPSLatitude } && ${$self->exif_data()}{ GPSLongitude }){
         my $lat = ${$self->exif_data()}{ GPSLatitude };
         my $lon = ${$self->exif_data()}{ GPSLongitude };
-        my @lat_long_list = [ $lat, $lon ];
+        $$geo_data{hemisphere} =  ${$self->exif_data()}{ GPSLatitudeRef };
+
+        # Remove + to avoid sprintf error... TODO fix
+        $lat =~ s/\+//;
+        $lon =~ s/\+//;
+        my @lat_long_list = ( $lat, $lon );
 
         my $lat_long_dd = $self->_geo_converter->cnv_to_dd(\@lat_long_list);
         $lat_long = join(',', @{$lat_long_dd});
@@ -132,7 +137,7 @@ sub _build_geo_data {
             if ($lat_long && $lat_long ne 'NaN') {
                 $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
                 $$geo_data{latitude} ||= @{$lat_long_dd}[0];
-                $$geo_data{longitude} ||= @{$lat_long_dd}[1];
+                $$geo_data{longitude} ||= @{$lat_long_dd}[1];;
             }
             else {
                 carp sprintf "Could not make decimal lat/long from lat:%s lon:%s", $lat, $lon;
