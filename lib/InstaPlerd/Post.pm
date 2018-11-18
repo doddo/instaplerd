@@ -7,7 +7,7 @@ use InstaPlerd::ExifHelper;
 use InstaPlerd::TitleGenerator;
 use InstaPlerd::Util;
 
-
+use Carp;
 use Plerd::Post;
 
 use Path::Class::File;
