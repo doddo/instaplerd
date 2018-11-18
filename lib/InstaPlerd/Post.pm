@@ -114,28 +114,31 @@ sub _process_source_file {
     my $body;
     my $destination_image;
 
+    # this is expensive memory-wise
     $self->source_image->read($self->source_file);
     $destination_image = $self->source_image->Clone();
-    $self->exif_helper(
-        InstaPlerd::ExifHelper->new(source_image => $self->source_image));
-    $self->title_generator(
-        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
-
-    my ($height, $width) = $self->source_image->Get('height', 'width');
 
     my @ordered_attributes = qw(title time published_filename guid comment location checksum);
     try {
-        my $source_meta = $self->util->load_image_meta($self->source_image);
+        my $source_meta = $self->util->load_image_meta($self->source_file->stringify);
 
         foreach my $key (@ordered_attributes) {
             $attributes{$key} = $$source_meta{$key} if exists $$source_meta{$key}
         };
     } catch {
-        if ($self->source_image->get('comment')) {
-            $attributes{'comment'} = $self->source_image->get('comment');
-        }
+        carp (sprintf ("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
         $attributes_need_to_be_written_out = 1;
     };
+
+
+    $self->exif_helper(
+        InstaPlerd::ExifHelper->new
+            (source_file => $self->source_file,
+            geo_data => $attributes{ location }));
+    $self->title_generator(
+        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
+
+    my ($height, $width) = $self->source_image->Get('height', 'width');
 
     $self->attributes(\%attributes);
 
@@ -277,8 +280,8 @@ sub _process_source_file {
     }
 
     if ($attributes_need_to_be_written_out) {
-        $self->source_file->spew(iomode => '>:raw',
-            $self->util->save_image_meta($self->source_image, \%attributes));
+        $self->util->save_image_meta(
+            $self->source_file->stringify, \%attributes);
     }
     $self->source_image(undef);
 }
