@@ -7,7 +7,7 @@ use InstaPlerd::ExifHelper;
 use InstaPlerd::TitleGenerator;
 use InstaPlerd::Util;
 
-
+use Carp;
 use Plerd::Post;
 
 use Path::Class::File;
@@ -112,30 +112,26 @@ sub _process_source_file {
     my $attributes_need_to_be_written_out = 0;
     my $image_needs_to_be_published = 0;
     my $body;
-    my $destination_image;
-
-    $self->source_image->read($self->source_file);
-    $destination_image = $self->source_image->Clone();
-    $self->exif_helper(
-        InstaPlerd::ExifHelper->new(source_image => $self->source_image));
-    $self->title_generator(
-        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
-
-    my ($height, $width) = $self->source_image->Get('height', 'width');
 
     my @ordered_attributes = qw(title time published_filename guid comment location checksum);
     try {
-        my $source_meta = $self->util->load_image_meta($self->source_image);
+        my $source_meta = $self->util->load_image_meta($self->source_file->stringify);
 
         foreach my $key (@ordered_attributes) {
             $attributes{$key} = $$source_meta{$key} if exists $$source_meta{$key}
         };
     } catch {
-        if ($self->source_image->get('comment')) {
-            $attributes{'comment'} = $self->source_image->get('comment');
-        }
+        carp (sprintf ("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
         $attributes_need_to_be_written_out = 1;
     };
+
+
+    $self->exif_helper(
+        InstaPlerd::ExifHelper->new
+            (source_file => $self->source_file));
+    $self->title_generator(
+        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
+
 
     $self->attributes(\%attributes);
 
@@ -171,6 +167,7 @@ sub _process_source_file {
     }
     else {
         my $publication_dt;
+        # TODO use exif for this rather than NOW
         $publication_dt = DateTime->now(time_zone => 'local');
         $self->date($publication_dt);
 
@@ -189,7 +186,10 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
-    if ($self->do_geo_lookup && !$attributes{ location }) {
+    if ( $attributes{ location } && %{ $attributes{ location } } ) {
+        $self->exif_helper->geo_data( $attributes{ location } );
+    }
+    elsif ($self->do_geo_lookup) {
         if ($self->exif_helper->geo_data) {
             $attributes{ location } = $self->exif_helper->geo_data;
             $attributes_need_to_be_written_out = 1;
@@ -207,23 +207,6 @@ sub _process_source_file {
         $self->image_alt($self->plerd->image_alt || '');
     }
 
-    # fix rotation if need be
-    $destination_image->AutoOrient();
-
-    $destination_image->Resize(
-        'gravity'  => 'Center',
-        'geometry' =>
-            $height / $self->height < $width / $self->width
-            ? sprintf 'x%i', $self->height
-            : sprintf '%ix', $self->width
-    );
-
-    $destination_image->Crop(
-        'gravity'  => 'Center',
-        'geometry' => sprintf ("%ix%i", $self->width, $self->height),
-    );
-
-
     my $published_filename_jpg = $attributes { published_filename };
     $published_filename_jpg =~ s/\.html?$/.jpeg/i;
 
@@ -231,6 +214,7 @@ sub _process_source_file {
             $self->plerd->publication_path, 'images', $published_filename_jpg);
 
     if ( -e $target_jpg_file_path && $attributes{ checksum }) {
+
         my $fh = Path::Class::File->new($target_jpg_file_path);
         my $checksum = md5_hex($fh->slurp(iomode => '<:raw'));
         if ($checksum ne $attributes{ checksum }) {
@@ -261,6 +245,27 @@ sub _process_source_file {
     $self->body($body);
 
     if ($image_needs_to_be_published) {
+        # this is expensive memory-wise
+        $self->source_image->read($self->source_file);
+        my $destination_image = $self->source_image->Clone();
+
+        # fix rotation if need be
+        $destination_image->AutoOrient();
+
+        my ($height, $width) = $self->source_image->Get('height', 'width');
+        $destination_image->Resize(
+            'gravity'  => 'Center',
+            'geometry' =>
+                $height / $self->height < $width / $self->width
+                ? sprintf 'x%i', $self->height
+                : sprintf '%ix', $self->width
+        );
+
+        $destination_image->Crop(
+            'gravity'  => 'Center',
+            'geometry' => sprintf ("%ix%i", $self->width, $self->height),
+        );
+
          # Here is where the magic happens
         mkpath(File::Spec->catdir(
             $self->plerd->publication_path, 'images'));
@@ -269,6 +274,7 @@ sub _process_source_file {
         # Remove all image metadata before publication (after filter in case it uses it for something...)
         $destination_image->Strip();
 
+        # TODO: make path/ name more uniq
         $destination_image->write(
             filename => $target_jpg_file_path,
             compression => $self->image_compression);
@@ -277,8 +283,8 @@ sub _process_source_file {
     }
 
     if ($attributes_need_to_be_written_out) {
-        $self->source_file->spew(iomode => '>:raw',
-            $self->util->save_image_meta($self->source_image, \%attributes));
+        $self->util->save_image_meta(
+            $self->source_file->stringify, \%attributes);
     }
     $self->source_image(undef);
 }

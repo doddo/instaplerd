@@ -7,39 +7,43 @@ use utf8;
 use v5.22;
 use Getopt::Long;
 use File::Basename qw/basename/;
-use Image::Magick;
-
 
 my @deltags;
 my $list;
 my $util = InstaPlerd::Util->new;
 my $length = 24;
-my $verbose;
+my $clear = 0;
+
 GetOptions ("length=i"  => \$length,
               "list"    => \$list,
+              "clear"   => \$clear,
               "deltag=s"  => \@deltags)
 or die("Error in command line arguments\n");
 
 while (<@ARGV>) {
     printf "\nProcessing [%-s]:\n", basename($_);
-    my $im = Image::Magick->new;
-    $im->read($_);
-    my $meta = $util->load_image_meta($im);
-    if (do_stuff($_, $meta)){
-        my $sf=Image::Magick->new(magick=>'jpg');
-        $sf->BlobToImage($util->save_image_meta($im, $meta));
-        $sf->write(filename => $_);
+    if ($clear) {
+        die "can't use clear in combination with 'list', 'deltag' ...\n"
+            if ($list || @deltags);
+        say "Deleting all InstaPlerd meta...";
+        $util->save_image_meta($_, {});
+    }
+    else {
+        my $meta = $util->load_image_meta($_);
+        if (do_stuff($_, $meta)) {
+            $util->save_image_meta($_, $meta);
+        }
     }
 }
 
 sub do_stuff {
     my $file = shift;
     my $meta = shift;
-    my $indent = shift || 15;
+    my $indent = shift || 20;
     my $item = shift || "";
     my $change = 0;
 
-    foreach my $key (sort {$a cmp $b} keys %{$meta} ){
+    foreach my $key ( sort {$a cmp $b} keys %{$meta} ){
         my $rel_key = $item eq "" ? $key : "$item.$key";
 
         if ($key ~~ @deltags) {

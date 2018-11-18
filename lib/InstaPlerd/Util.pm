@@ -3,8 +3,8 @@ package InstaPlerd::Util;
 use strict;
 use warnings FATAL => 'all';
 use Moose;
+use Image::ExifTool qw(:Public);
 use JSON;
-use Carp;
 use utf8;
 
 has 'json' => (
@@ -13,10 +13,18 @@ has 'json' => (
         default => sub {JSON->new->utf8->allow_nonref}
     );
 
+has 'exiftool' => (
+        is      => 'ro',
+        isa     => 'Image::ExifTool',
+        default => sub {Image::ExifTool->new()}
+    );
+
 sub load_image_meta {
     my $self = shift;
     my $image = shift;
-    return $self->json->decode($image->get('comment'));
+    my $info = $self->exiftool->ImageInfo($image);
+
+    return $self->json->decode($$info{ Comment });
 }
 
 sub save_image_meta {
@@ -25,10 +33,8 @@ sub save_image_meta {
     my $meta = shift;
 
     my $payload = $self->json->encode($meta);
-
-    $image->Set("comment" => $payload);
-
-    return $image->ImageToBlob();
+    $self->exiftool->SetNewValue(Comment => $payload);
+    $self->exiftool->WriteInfo($image);
 }
 
 1;
