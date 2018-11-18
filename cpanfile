@@ -6,6 +6,7 @@ requires 'Geo::Coordinates::Transform';
 requires 'Geo::Coder::OSM';
 requires 'File::Spec';
 requires 'Image::Magick';
+requires 'Image::ExifHelper';
 requires 'Moose';
 requires 'Readonly';
 requires 'Try::Tiny';
