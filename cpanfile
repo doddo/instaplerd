@@ -1,6 +1,7 @@
 requires 'perl', '5.008001';
 
 requires 'Carp';
+requires 'Plerd';
 requires 'DateTime::Format::Strptime';
 requires 'Geo::Coordinates::Transform';
 requires 'Geo::Coder::OSM';

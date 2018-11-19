@@ -1,4 +1,4 @@
-package InstaPlerd::Filters::Artistic;
+package InstaPlerd::Filters::ArtisticGrayScale;
 use InstaPlerd::Filter;
 
 use strict;
