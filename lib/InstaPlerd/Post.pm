@@ -17,12 +17,12 @@ use JSON;
 use File::Path qw(mkpath);
 use File::Spec;
 use Image::Magick;
+
+use Module::Load;
 use Moose;
+
 use Readonly;
 use Try::Tiny;
-
-# Todo dynamically load
-use InstaPlerd::Filters::Artistic;
 
 use warnings FATAL => 'all';
 
@@ -31,6 +31,35 @@ extends "Plerd::Post";
 sub file_type {
     'jpe?g';
 }
+
+around BUILDARGS => sub {
+    my $orig  = shift;
+    my $class = shift;
+    my %args = @_;
+
+    # Inject preferences from the global plerd config
+    if ($args{plerd}{ extension_preferences }{ $class }){
+        my $plugin_prefs = $args{plerd}->{ extension_preferences }{ $class };
+        foreach my $key (%{$plugin_prefs}){
+            if ($key eq 'filter' && ! defined $args { filter }) {
+                load $$plugin_prefs{ $key };
+                $args{$key} = $$plugin_prefs{ $key }->new();
+            }
+            else {
+                # Preferences already set when creating object take precedence over
+                # what ever is specified in the config.
+                $args{$key} ||= $$plugin_prefs{ $key }
+            }
+        }
+    }
+    # load the default filter if none is specified ...
+    unless (defined ${args}{'filter'}){
+        load InstaPlerd::Filters::Artistic;
+    }
+
+    my @args = %args;
+    return $class->$orig(@args);
+};
 
 has 'source_image' => (
         is      => 'rw',

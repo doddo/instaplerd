@@ -9,6 +9,7 @@ requires 'Geo::Coder::OSM';
 requires 'Image::Magick';
 requires 'Image::ExifTool';
 requires 'JSON';
+requires 'Module::Load';
 requires 'Moose';
 requires 'Plerd';
 requires 'Pod::Usage';
