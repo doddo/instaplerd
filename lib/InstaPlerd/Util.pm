@@ -19,12 +19,24 @@ has 'exiftool' => (
         default => sub {Image::ExifTool->new()}
     );
 
+sub decode {
+    my $self = shift;
+    my $meta = shift;
+    $self->json->decode($meta);
+}
+
+sub encode {
+    my $self = shift;
+    my $meta = shift;
+    $self->json->pretty->encode($meta);
+}
+
 sub load_image_meta {
     my $self = shift;
     my $image = shift;
     my $info = $self->exiftool->ImageInfo($image);
 
-    return $self->json->decode($$info{ Comment });
+    return $self->decode($$info{ Comment });
 }
 
 sub save_image_meta {
