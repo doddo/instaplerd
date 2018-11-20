@@ -28,9 +28,9 @@ or pod2usage( -exitval => 2, -verbose => 1 );
 pod2usage(-exitval => 0, -verbose => 1 ) if $help;
 pod2usage(-exitval => 0, -verbose => 2 ) if $man;
 
+my $stream = $jsondump ? \*STDERR : \*STDOUT;
 
 while (<@ARGV>) {
-    my $stream = $jsondump ? \*STDERR : \*STDOUT;
 
     printf $stream "\nProcessing [%-s]:\n", basename($_);
     if (! -e || ! m/\.jpe?g$/i ) {
