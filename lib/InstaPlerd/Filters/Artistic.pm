@@ -9,8 +9,7 @@ use Carp;
 
 extends "InstaPlerd::Filter";
 
-sub apply {
-
+sub _apply {
     my $self = shift;
     my $source_image = shift;
 
