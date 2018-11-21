@@ -15,6 +15,7 @@ requires 'Plerd';
 requires 'Pod::Usage';
 requires 'Readonly';
 requires 'Software::License::MIT';
+requires 'Text::MultiMarkdown';
 requires 'Text::Sprintf::Named';
 requires 'Try::Tiny';
 
