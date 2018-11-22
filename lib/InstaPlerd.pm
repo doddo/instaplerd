@@ -8,12 +8,11 @@ our $VERSION = "0.01";
 use File::ShareDir qw(dist_dir);
 use File::Which;
 
-use vars qw(@ISA @EXPORT $KDATAPATH);
+use vars qw(@ISA @EXPORT $ASSET_DIR);
 
 @ISA = qw(Exporter);
-@EXPORT = qw($KDATAPATH);
-$KDATAPATH = dist_dir('InstaPlerd');
-
+@EXPORT = qw($ASSET_DIR);
+$ASSET_DIR = dist_dir('InstaPlerd');
 
 
 1;

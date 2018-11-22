@@ -32,7 +32,7 @@ WriteMakefile(
            'Carp'   => '0',
            'DateTime::Format::Strptime' => '0',
            'Digest::MD5'               => '0',
-           'File::ShareDir::Install' => '0',
+           'File::ShareDir'         => '0',
            'File::Spec'             => '0',
            'Geo::Coordinates::Transform'   => '0',
            'Geo::Coder::OSM'        => '0',

@@ -27,7 +27,7 @@ sub _apply {
     $source_image->Modulate(100,150,100);
     $source_image->AutoGamma;
 
-    return $source_image;
+    return $self->add_frame($source_image, '100%');
 }
 
 1;
