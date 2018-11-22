@@ -3,6 +3,7 @@ requires 'perl', '5.008001';
 requires 'Carp';
 requires 'DateTime::Format::Strptime';
 requires 'Digest::MD5';
+requires 'File::ShareDir::Install'
 requires 'File::Spec';
 requires 'Geo::Coordinates::Transform';
 requires 'Geo::Coder::OSM';
@@ -18,7 +19,6 @@ requires 'Software::License::MIT';
 requires 'Text::MultiMarkdown';
 requires 'Text::Sprintf::Named';
 requires 'Try::Tiny';
-rewuires 'File::ShareDir::Install'
 
 
 on 'test' => sub {
