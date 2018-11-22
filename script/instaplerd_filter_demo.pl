@@ -19,7 +19,7 @@ my $width = 300;
 my $height = 300;
 my $cols;
 my @filters =
-    qw/Nofilter Artistic ArtisticGrayScale Nelville Batman/;
+    qw/Nofilter Artistic ArtisticGrayScale Nelville Batman Pi/;
 my $help = 0;
 my $man = 0;
 my $output_format = 'md';
