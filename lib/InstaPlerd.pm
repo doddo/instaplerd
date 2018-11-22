@@ -5,6 +5,15 @@ use warnings;
 
 our $VERSION = "0.01";
 
+use File::ShareDir qw(dist_dir);
+use File::Which;
+
+use vars qw(@ISA @EXPORT $KDATAPATH);
+
+@ISA = qw(Exporter);
+@EXPORT = qw($KDATAPATH);
+$KDATAPATH = dist_dir('InstaPlerd');
+
 
 
 1;

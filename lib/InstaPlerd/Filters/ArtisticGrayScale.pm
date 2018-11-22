@@ -22,5 +22,7 @@ sub _apply {
     $source_image->Border(geometry => '1x1', color => 'gray');
 
     $source_image->Set(type => 'grayscale');
+
+    return $source_image;
 }
 

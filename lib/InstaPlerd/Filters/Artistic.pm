@@ -20,5 +20,6 @@ sub _apply {
     $source_image->Border(geometry => '14x14', color => 'white');
     $source_image->Border(geometry => '1x1', color => 'gray');
 
+    return $source_image;
 }
 

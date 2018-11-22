@@ -10,3 +10,5 @@ use Module::Build::Tiny 0.035;
 
 Build_PL();
 
+package MY;
+use File::ShareDir::Install qw(postamble);

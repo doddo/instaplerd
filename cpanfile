@@ -18,6 +18,7 @@ requires 'Software::License::MIT';
 requires 'Text::MultiMarkdown';
 requires 'Text::Sprintf::Named';
 requires 'Try::Tiny';
+rewuires 'File::ShareDir::Install'
 
 
 on 'test' => sub {

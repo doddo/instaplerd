@@ -299,12 +299,12 @@ sub _process_source_file {
         mkpath(File::Spec->catdir(
             $self->plerd->publication_path, 'images'));
 
-        $self->filter->apply($destination_image);
+        my $filtered_image = $self->filter->apply($destination_image);
         # Remove all image metadata before publication (after filter in case it uses it for something...)
-        $destination_image->Strip();
+        $filtered_image->Strip();
 
         # TODO: make path/ name more uniq
-        $destination_image->write(
+        $filtered_image->write(
             filename => $target_jpg_file_path,
             compression => $self->image_compression);
 

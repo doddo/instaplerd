@@ -13,12 +13,13 @@ has restrictions => (
 sub apply {
     my $self = shift;
     my $image = shift;
-    $self->_apply($image);
+    return $self->_apply($image);
 }
 
 sub _apply {
     my $self = shift;
     my $image = shift;
+
 }
 
 sub _build_restrictions {

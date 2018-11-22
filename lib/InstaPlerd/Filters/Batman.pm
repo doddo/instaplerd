@@ -24,6 +24,7 @@ sub _apply{
     $source_image->Shave(geometry => '20x20');
     $source_image->Border(geometry => '20x20', color => 'black');
 
+    return $source_image;
 }
 
 sub _build_restrictions {

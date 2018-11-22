@@ -19,7 +19,7 @@ my $width = 300;
 my $height = 300;
 my $cols;
 my @filters =
-    qw/Artistic ArtisticGrayScale Batman/;
+    qw/Nofilter Artistic ArtisticGrayScale Nelville Batman/;
 my $help = 0;
 my $man = 0;
 my $output_format = 'md';
@@ -80,8 +80,7 @@ sub do_stuff {
     foreach my $f (@filters) {
         my $filter = "InstaPlerd::Filters::${f}"->new();
 
-        my $dst_image =$image->Clone();
-        $filter->apply($dst_image);
+        my $dst_image = $filter->apply($image->Clone());
         my $img_filename = sprintf "%s_%sx%s_%s", $f, $height, $width, $file->basename;
         $dst_image->write(File::Spec->catfile($output_dir, $img_dir, $img_filename));
         push @generated_objects, $img_filename;
@@ -93,7 +92,18 @@ sub create_md {
     my @generated_objects = @_;
     my @filters_used;
     my $i = 0;
-    my $body= "| :) " x $cols;
+    my $body;
+
+    my $filters_are_headlines = (@generated_objects % $cols == 0 && $cols == @filters)
+        ? 1
+        : 0;
+
+    if ($filters_are_headlines) {
+        $body .= "| $_" for @filters;
+    } else {
+        $body .= "|  " x $cols;
+    }
+
     $body.="\n|";
     $body.= " --- |" x $cols;
     $body.="\n";
@@ -103,14 +113,15 @@ sub create_md {
         my $filter_name = (split("_", $generaded_object))[0];
 
         $body.= sprintf '| ![img alt](%s "%s") ', File::Spec->catfile($img_dir, $generaded_object), $filter_name;
-        push @filters_used, $filter_name;
+        push (@filters_used, $filter_name) unless $filters_are_headlines;
         if ($i % $cols == 0) {
             $body .= "|\n";
-            while (my $f = shift @filters_used){
-                $body .= "| ${f} ";
+            unless ($filters_are_headlines) {
+                while (my $f = shift @filters_used){
+                    $body .= "| ${f} ";
+                }
+                $body .= "|\n";
             }
-            $body .= "|\n";
-
         }
     }
     if (@generated_objects % $cols != 0) {
@@ -119,7 +130,9 @@ sub create_md {
             push @filters_used, "-";
         }
         while (my $f = shift @filters_used){
-            $body .= "| ${f}";
+            unless ($filters_are_headlines) {
+                $body .= "| ${f}";
+            }
         }
         $body .= "|\n";
     }
