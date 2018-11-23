@@ -20,6 +20,12 @@ has _frame => (
         lazy_build => 1
     );
 
+has name => (
+        is => 'ro',
+        isa => 'Str',
+        lazy_build => 1
+    );
+
 sub apply {
     my $self = shift;
     my $image = shift;
@@ -32,17 +38,6 @@ sub _apply {
 
 }
 
-sub _build__frame {
-    my $self = shift;
-    my ($filtername) = $self->meta->name =~ /::([A-Z][a-z0-9A-Z]+)$/;
-    my $surface_file = File::Spec->catfile($ASSET_DIR, 'filters', sprintf 'border_%s.png', $filtername);
-
-    if (-e $surface_file) {
-        my $border = Image::Magick->new();
-        $border->read($surface_file);
-        return $border
-    }
-}
 
 sub add_frame {
     my $self = shift;
@@ -64,9 +59,27 @@ sub add_frame {
     return $self->_frame->Clone();
 }
 
+sub _build_name {
+    my $self = shift;
+
+    (my $name) = $self->meta->name =~ /::([A-Z][a-z0-9A-Z]+)$/;
+    return  $name;
+}
 
 sub _build_restrictions {
     return {};
 }
+
+sub _build__frame {
+    my $self = shift;
+    my $surface_file = File::Spec->catfile($ASSET_DIR, 'filters', sprintf 'border_%s.png', $self->name);
+
+    if (-e $surface_file) {
+        my $border = Image::Magick->new();
+        $border->read($surface_file);
+        return $border
+    }
+}
+
 
 1;

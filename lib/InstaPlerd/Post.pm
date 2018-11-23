@@ -118,7 +118,7 @@ has 'source_file' => (
 has 'filter' => (
         is      => 'rw',
         isa     => 'InstaPlerd::Filter',
-        default => sub {InstaPlerd::Filters::Artistic->new()}
+        lazy_build => 1,
     );
 
 has 'util' => (
@@ -142,7 +142,7 @@ sub _process_source_file {
     my $image_needs_to_be_published = 0;
     my $body;
 
-    my @ordered_attributes = qw(title time published_filename guid comment location checksum);
+    my @ordered_attributes = qw(title time published_filename guid comment location checksum filter);
     try {
         my $source_meta = $self->util->load_image_meta($self->source_file->stringify);
 
@@ -225,6 +225,16 @@ sub _process_source_file {
         }
     }
 
+    if ( $attributes{ filter } ){
+        # TODO
+        my $filter = 'InstaPlerd::Filters::' . $attributes{ filter };
+        load $filter;
+        $self->filter( $filter->new() );
+    } else {
+        $attributes_need_to_be_written_out = 1;
+        $attributes{ filter } = $self->filter->name;
+    }
+
     # TODO
     if ($attributes{ image }) {
         $self->image(URI->new($attributes{ image }));
@@ -265,6 +275,7 @@ sub _process_source_file {
             width        => $self->width,
             heigth       => $self->height,
             exif         => $self->exif_helper->exif_data,
+            filter       => $attributes{ filter },
             location     => $attributes{ location }{ address } || undef,
             uri          => File::Spec->catfile('images', $published_filename_jpg),
             context_post => $self,
@@ -308,7 +319,7 @@ sub _process_source_file {
             filename => $target_jpg_file_path,
             compression => $self->image_compression);
 
-        $attributes{ checksum } = md5_hex($destination_image->ImageToBlob());
+        $attributes{ checksum } = md5_hex($filtered_image->ImageToBlob());
     }
 
     if ($attributes_need_to_be_written_out) {
@@ -324,6 +335,15 @@ sub _build_instaplerd_template_file {
         $self->plerd->template_directory,
         'instaplerd_post_content.tt',
     );
+}
+
+sub _build_filter {
+    my $self = shift;
+    my @available_filters = qw/Artistic ArtisticGrayscale Batman Nelville Pi/;
+    my $filter = sprintf 'InstaPlerd::Filters::%s', $available_filters[rand @available_filters];
+    load $filter;
+    return $filter->new();
+
 }
 
 1;
