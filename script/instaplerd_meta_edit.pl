@@ -72,7 +72,7 @@ sub do_stuff {
         } else {
             if (ref $$meta{$key} eq 'HASH') {
                 printf "%${indent}s = {\n", $rel_key;
-                do_stuff($file, $$meta{$key}, $indent + 20, $rel_key);
+                $cgange += do_stuff($file, $$meta{$key}, $indent + 20, $rel_key);
                 printf "    %${indent}s\n", "}";
             } elsif (ref $$meta{$key} eq 'ARRAY') {
                 printf "%${indent}s = [%-s]\n",  $rel_key, join (', ', @{$$meta{$key}});

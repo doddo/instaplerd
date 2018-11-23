@@ -18,8 +18,8 @@ use Text::MultiMarkdown 'markdown';
 my $width = 300;
 my $height = 300;
 my $cols;
-my @filters =
-    qw/Nofilter Artistic ArtisticGrayScale Nelville Batman Pi/;
+my @filters;
+
 my $help = 0;
 my $man = 0;
 my $output_format = 'md';
@@ -32,7 +32,7 @@ GetOptions (  "width=i"         => \$width,
               "cols=i"          => \$cols,
               "output-format=s" => \$output_format,
               "output-dir=s"    => \$output_dir,
-              "filters"         => \@filters,
+              "filters=s"       => \@filters,
               "help=i"          => \$help,
               "man"             => \$man
 ) or pod2usage( -exitval => 2, -verbose => 1 );
@@ -42,6 +42,8 @@ pod2usage(-exitval => 0, -verbose => 2 ) if $man;
 die "illegal output format.\n" unless ($output_format =~ m/^(:?html?|md|markdown)$/i);
 
 my $img_dir = 'images';
+push @filters, qw/Nofilter Artistic ArtisticGrayScale Nelville Batman Pi/ unless @filters;
+
 $cols ||= @filters < 10? @filters: 3;
 
 mkpath($output_dir);
@@ -70,6 +72,7 @@ sub crop_and_scale {
         'gravity'  => 'Center',
         'geometry' => sprintf ("%ix%i", $width, $height),
     );
+    $image->Strip();
     return $image;
 }
 
