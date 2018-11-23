@@ -10,20 +10,28 @@ extends "InstaPlerd::Filter";
 sub _apply {
     my $self = shift;
     my $source_image = shift;
-    my $invert = $source_image->Clone();
+    $source_image->Colorspace(colorspace => 'RGB');
+    my $blue = $source_image->Clone();
     my $beige = $source_image->Clone();
 
-    $invert->Colorspace(colorspace => 'Gray');
-    $invert->Colorize(fill => '#222b6d', blend => '60%'); # BLUE
-    $invert->Negate();
-    $beige->Colorspace(colorspace => 'Gray');
-    $beige->Colorize(fill => '#f7daae', blend=>"60%"); # Beige
-    $beige->Colorspace(colorspace => 'RGB');
+    my $gray = $blue->Clone();
+    $gray->Colorspace(colorspace => 'Gray');
 
+    $blue->Colorize(fill => '#222b6d', blend => "100%"); # BLUE
+    $blue->Composite(compose => 'Blend', image => $gray);
 
-    $invert->Composite(compose => 'Overlay', image=>$beige, blend=>'100%');
+    undef $gray;
 
-    $source_image->Composite(compose => 'Overlay', image => $invert, blend=>'30%');
+    $gray = $beige->Clone();
+    $gray->Colorspace(colorspace => 'Gray');
+    $gray->Negate();
+    $beige->Colorize(fill => '#f7daae', blend => "100%"); # Beige
+
+    $beige->Composite(compose => 'Blend', image => $gray);
+    $beige->Composite(compose => 'Multiply', image => $blue);
+    $source_image->Set("compose:args","55");
+    $source_image->Composite(compose => 'Blend', image => $beige);
+
     $source_image->Modulate(100,150,100);
     $source_image->AutoGamma;
 
