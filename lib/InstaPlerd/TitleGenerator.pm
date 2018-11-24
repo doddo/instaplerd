@@ -30,15 +30,14 @@ has 'title_template_list' => (
         isa => 'ArrayRef[Str]',
         default => sub {
             return [
-                "%(superlative)s %(time_of_day)s %(location_with_random_precision)s",
+                "%(time_of_day)s %(location_with_random_precision)s",
                 "%(superlative)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
                 "%(time_of_day)s %(location_with_random_precision)s",
                 "%(season)s %(location_with_random_precision)s",
                 "%(season)s %(location_with_random_precision)s",
-                "%(season)s in the %(time_of_day)s %(location_with_random_precision)s",
-            ];
-        }
-    );
+                "%(season)s %(time_of_day)s %(location_with_random_precision)s",
+            ]}
+        );
 
 has 'superlative_list' => (
         is => 'rw',
@@ -50,9 +49,8 @@ has 'superlative_list' => (
                 "A Quite Decent",
                 "An OK",
                 "The Best",
-            ];
-        }
-    );
+            ]}
+        );
 
 sub interesting_fact {
     # TODO WIP
@@ -64,26 +62,37 @@ sub interesting_fact {
             push @interesting_facts, ${$self->exif_helper->geo_data()}{ GPSAltitude };
         }
     }
-
 }
 
 sub location_with_random_precision {
     my $self = shift;
     my $geo = $self->exif_helper->geo_data();
+    my @interesting_keys_in = qw/country state county
+            city suburb town/;
+    my @uninteresting_keys = qw/house_number postcode country_code/;
     my @loc;
 
-    if (defined $geo && defined $$geo{ address } && defined $$geo{ address }){
+    if (defined $geo && defined $$geo{ address } && defined $$geo{ address }) {
         my $address = $$geo{ address };
-        # TODO F: FAN FIXA
-        foreach my $interesting_key (qw/in-country in-state in-county
-            in-city in-suburb at-road at-postcode at-cafe in-town at-marina/) {
-            (my $at_or_in, my $location) = split /-/, $interesting_key, 2; # Nice
-            if (defined $$address{ $location } && length $$address{ $location }) {
-                push @loc, sprintf"%s %s", $at_or_in, $$address{ $location };
+        while (my ($key, $value) = each (%{$address})) {
+            if ($key ~~ @uninteresting_keys) {
+                next;
+            }
+            elsif ($key ~~ @interesting_keys_in) {
+                push @loc, ['in', $value];
+            }
+            else {
+                # Assume this key is something super special or something
+                unshift @loc, ['at', $value];
             }
         }
     }
-    return $loc[ rand @loc ];
+
+    # Gravitate towards more specific location with this trick:
+    my $i = rand @loc;
+    my $j = rand @loc;
+
+    return $i < $j? $loc[$i]: $loc[$j];
 }
 
 sub fmt_hash {
@@ -92,7 +101,7 @@ sub fmt_hash {
     return (
         superlative => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
         time_of_day => $self->_capitalise($self->time_of_day) || '',
-        location_with_random_precision => $self->location_with_random_precision() || '',
+        location_with_random_precision => join(" ", @{ $self->location_with_random_precision() }) || '',
         season => $self->_capitalise($self->season || '')
     );
 }
