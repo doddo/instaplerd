@@ -11,9 +11,7 @@ sub _apply {
     my $self = shift;
     my $source_image = shift;
 
-
     $source_image->Modulate(brightness => 110, saturation => 60, hue => 80);
-    #$source_image->ContrastStretch('33%');
     $source_image->Colorspace(colorspace => 'Gray');
 
     my $specs = $source_image->Clone();
