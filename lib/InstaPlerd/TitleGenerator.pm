@@ -97,11 +97,17 @@ sub location_with_random_precision {
 
 sub fmt_hash {
     my $self = shift;
+
+    my $location = $self->location_with_random_precision();
+    if ($location) {
+        $location = join(" ", @{ $self->location_with_random_precision() })
+    }
+
     # TODO: fix this
     return (
         superlative => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
         time_of_day => $self->_capitalise($self->time_of_day) || '',
-        location_with_random_precision => join(" ", @{ $self->location_with_random_precision() }) || '',
+        location_with_random_precision => $location || '',
         season => $self->_capitalise($self->season || '')
     );
 }
@@ -146,7 +152,14 @@ sub _build_season {
     # TODO: Fix this
     eval {
         $m = $self->exif_helper->timestamp->month;
-        $lat = ${$self->exif_helper->geo_data()}{ latitude } || 'North';
+        $lat = ${$self->exif_helper->geo_data()}{ latitude } || 0;
+        unless ($lat eq "North" || $lat eq "South") {
+            if ($lat < 0) {
+                $lat = "South";
+            } else {
+                $lat = "North";
+            }
+        }
     };
     return undef if $@;
 
