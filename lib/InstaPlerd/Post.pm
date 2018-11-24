@@ -257,10 +257,14 @@ sub _process_source_file {
         my $fh = Path::Class::File->new($target_jpg_file_path);
         my $checksum = md5_hex($fh->slurp(iomode => '<:raw'));
         if ($checksum ne $attributes{ checksum }) {
+            printf "checksum for '%s' has changed. On disk: <%s>, in '%s' meta: <%s>. Regenerating it usw.\n",
+                $fh->basename, ${ checksum }, $self->source_file->basename, $attributes{ checksum };
             $image_needs_to_be_published = 1;
-            $attributes_need_to_be_written_out =1;
+            $attributes_need_to_be_written_out = 1;
         }
     } else {
+        printf "checksum for '%s' not stored in META. Generating image usw.\n",
+             $self->source_file->basename, $attributes{ checksum };
         $image_needs_to_be_published = 1;
         $attributes_need_to_be_written_out = 1;
     }
@@ -311,15 +315,18 @@ sub _process_source_file {
             $self->plerd->publication_path, 'images'));
 
         my $filtered_image = $self->filter->apply($destination_image);
+
+        $filtered_image->Coalesce();
         # Remove all image metadata before publication (after filter in case it uses it for something...)
         $filtered_image->Strip();
+        $filtered_image->Set(compression => $self->image_compression);
 
         # TODO: make path/ name more uniq
-        $filtered_image->write(
-            filename => $target_jpg_file_path,
-            compression => $self->image_compression);
+        my $fh = Path::Class::File->new($target_jpg_file_path);
+        $fh->spew(iomode => '>:raw', $filtered_image->ImageToBlob());
 
         $attributes{ checksum } = md5_hex($filtered_image->ImageToBlob());
+
     }
 
     if ($attributes_need_to_be_written_out) {
