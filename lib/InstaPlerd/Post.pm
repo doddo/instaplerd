@@ -281,7 +281,7 @@ sub _process_source_file {
             exif         => $self->exif_helper->exif_data,
             filter       => $attributes{ filter },
             location     => $attributes{ location }{ address } || undef,
-            uri          => File::Spec->catfile('images', $published_filename_jpg),
+            uri          => File::Spec->catfile('/images', $published_filename_jpg),
             context_post => $self,
         },
         \$body,
