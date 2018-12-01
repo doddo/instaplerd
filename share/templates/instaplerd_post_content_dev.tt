@@ -4,7 +4,7 @@
     </div>
     <p class="camerainfo">Snapped[% IF exif.Model %] with [% exif.Make %] [% exif.Model %] [% END %]
         [% IF exif.DateTime %]on <i>[% exif.DateTime.ymd %] [% exif.DateTime.hms %]</i>
-    [% IF location %]in <img style="max-width:16px; max-height:11px;" src="flags/[% location.country_code %].png"  alt="[% location.country %] flag" /> [% location.suburb %], [% location.county %] [% END %]
+    [% IF location %]in <img style="max-width:16px; max-height:11px;" src="/flags/[% location.country_code %].png"  alt="[% location.country %] flag" /> [% location.suburb %], [% location.county %] [% END %]
         [% END %] using the <i>[%  filter %]</i> filter. </p>
     <table cols="2">
         <tr>
