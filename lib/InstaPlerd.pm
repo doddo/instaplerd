@@ -14,7 +14,6 @@ use vars qw(@ISA @EXPORT $ASSET_DIR);
 @EXPORT = qw($ASSET_DIR);
 $ASSET_DIR = dist_dir('InstaPlerd');
 
-
 1;
 __END__
 

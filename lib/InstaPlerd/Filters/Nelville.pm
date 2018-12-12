@@ -1,4 +1,4 @@
-package  InstaPlerd::Filters::Nelville;
+package InstaPlerd::Filters::Nelville;
 use strict;
 use warnings FATAL => 'all';
 use InstaPlerd::Filter;
@@ -29,10 +29,10 @@ sub _apply {
 
     $beige->Composite(compose => 'Blend', image => $gray);
     $beige->Composite(compose => 'Multiply', image => $blue);
-    $source_image->Set("compose:args","55");
+    $source_image->Set("compose:args", "55");
     $source_image->Composite(compose => 'Blend', image => $beige);
 
-    $source_image->Modulate(100,150,100);
+    $source_image->Modulate(100, 150, 100);
     $source_image->AutoGamma;
 
     return $self->add_frame($source_image, '100%');

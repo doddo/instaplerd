@@ -8,49 +8,49 @@ use utf8;
 use Moose;
 
 has 'exif_helper' => (
-        is  => 'ro',
-        isa => 'InstaPlerd::ExifHelper',
-        required => 1
-    );
+    is       => 'ro',
+    isa      => 'InstaPlerd::ExifHelper',
+    required => 1
+);
 
 has 'season' => (
-        is => 'rw',
-        isa => 'Maybe[Str]',
-        lazy_build => 1
+    is         => 'rw',
+    isa        => 'Maybe[Str]',
+    lazy_build => 1
 );
 
 has 'time_of_day' => (
-        is => 'rw',
-        isa => 'Maybe[Str]',
-        lazy_build => 1
-    );
+    is         => 'rw',
+    isa        => 'Maybe[Str]',
+    lazy_build => 1
+);
 
 has 'title_template_list' => (
-        is => 'rw',
-        isa => 'ArrayRef[Str]',
-        default => sub {
-            return [
-                "%(time_of_day)s %(location_with_random_precision)s",
-                "%(superlative)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
-                "%(time_of_day)s %(location_with_random_precision)s",
-                "%(season)s %(location_with_random_precision)s",
-                "%(season)s %(location_with_random_precision)s",
-                "%(season)s %(time_of_day)s %(location_with_random_precision)s",
-            ]}
-        );
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub {
+        return [
+            "%(time_of_day)s %(location_with_random_precision)s",
+            "%(superlative)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
+            "%(time_of_day)s %(location_with_random_precision)s",
+            "%(season)s %(location_with_random_precision)s",
+            "%(season)s %(location_with_random_precision)s",
+            "%(season)s %(time_of_day)s %(location_with_random_precision)s",
+        ]}
+);
 
 has 'superlative_list' => (
-        is => 'rw',
-        isa => 'ArrayRef[Str]',
-        default => sub {
-            return [
-                "A Great",
-                "A Wonderful",
-                "A Quite Decent",
-                "An OK",
-                "The Best",
-            ]}
-        );
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub {
+        return [
+            "A Great",
+            "A Wonderful",
+            "A Quite Decent",
+            "An OK",
+            "The Best",
+        ]}
+);
 
 sub interesting_fact {
     # TODO WIP
@@ -58,7 +58,7 @@ sub interesting_fact {
     my @interesting_facts;
 
     if (${$self->exif_helper->geo_data()}{ GPSAltitude }) {
-        if (${$self->exif_helper->geo_data()}{ GPSAltitude } =~ /^[^0]/){
+        if (${$self->exif_helper->geo_data()}{ GPSAltitude } =~ /^[^0]/) {
             push @interesting_facts, ${$self->exif_helper->geo_data()}{ GPSAltitude };
         }
     }
@@ -68,22 +68,22 @@ sub location_with_random_precision {
     my $self = shift;
     my $geo = $self->exif_helper->geo_data();
     my @interesting_keys_in = qw/country state county
-            city suburb town/;
+        city suburb town/;
     my @uninteresting_keys = qw/house_number postcode country_code/;
     my @loc;
 
     if (defined $geo && defined $$geo{ address } && defined $$geo{ address }) {
         my $address = $$geo{ address };
-        while (my ($key, $value) = each (%{$address})) {
+        while (my ($key, $value) = each(%{$address})) {
             if ($key ~~ @uninteresting_keys) {
                 next;
             }
             elsif ($key ~~ @interesting_keys_in) {
-                push @loc, ['in', $value];
+                push @loc, [ 'in', $value ];
             }
             else {
                 # Assume this key is something super special or something
-                unshift @loc, ['at', $value];
+                unshift @loc, [ 'at', $value ];
             }
         }
     }
@@ -92,7 +92,7 @@ sub location_with_random_precision {
     my $i = rand @loc;
     my $j = rand @loc;
 
-    return $i < $j? $loc[$i]: $loc[$j];
+    return $i < $j ? $loc[$i] : $loc[$j];
 }
 
 sub fmt_hash {
@@ -100,15 +100,15 @@ sub fmt_hash {
 
     my $location = $self->location_with_random_precision();
     if ($location) {
-        $location = join(" ", @{ $self->location_with_random_precision() })
+        $location = join(" ", @{$self->location_with_random_precision()})
     }
 
     # TODO: fix this
-    return (
-        superlative => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
-        time_of_day => $self->_capitalise($self->time_of_day) || '',
+    return(
+        superlative                    => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
+        time_of_day                    => $self->_capitalise($self->time_of_day) || '',
         location_with_random_precision => $location || '',
-        season => $self->_capitalise($self->season || '')
+        season                         => $self->_capitalise($self->season || '')
     );
 }
 
@@ -127,19 +127,25 @@ sub _build_time_of_day {
     my $self = shift;
 
     my $h = $self->exif_helper->timestamp->hour;
-    if ($h < 5){
+    if ($h < 5) {
         return 'late night'
-    } elsif ($h < 9 ) {
+    }
+    elsif ($h < 9) {
         return 'early morning'
-    } elsif ($h < 12 ) {
+    }
+    elsif ($h < 12) {
         return 'morning'
-    } elsif ($h < 15 ) {
+    }
+    elsif ($h < 15) {
         return 'early afternoon'
-    } elsif ($h < 17 ) {
+    }
+    elsif ($h < 17) {
         return 'afternoon'
-    } elsif ($h < 22 ) {
+    }
+    elsif ($h < 22) {
         return 'evening'
-    } else {
+    }
+    else {
         return 'night'
     }
 }
@@ -156,7 +162,8 @@ sub _build_season {
         unless ($lat eq "North" || $lat eq "South") {
             if ($lat < 0) {
                 $lat = "South";
-            } else {
+            }
+            else {
                 $lat = "North";
             }
         }
@@ -165,15 +172,18 @@ sub _build_season {
 
     if ($m >= 3 && $m < 6) {
         # March 1 to May 31;
-        return $lat eq 'North' ? 'spring': ('fall', 'autumn')[rand 2]
-    } elsif ($m < 9){
+        return $lat eq 'North' ? 'spring' : ('fall', 'autumn')[rand 2]
+    }
+    elsif ($m < 9) {
         # June 1 to August 31
-        return $lat eq 'North' ? 'summer':'winter'
-    } elsif ($m < 12){
-         # September 1 to November 30;
-        return$lat eq 'North' ? ('fall', 'autumn')[rand 2]:'spring'
-    } else {
-        return $lat eq 'North' ? 'winter':'summer'
+        return $lat eq 'North' ? 'summer' : 'winter'
+    }
+    elsif ($m < 12) {
+        # September 1 to November 30;
+        return $lat eq 'North' ? ('fall', 'autumn')[rand 2] : 'spring'
+    }
+    else {
+        return $lat eq 'North' ? 'winter' : 'summer'
     }
 }
 
@@ -181,18 +191,18 @@ sub _make_great_title {
     my $self = shift;
     my $title_fmt = ${$self->title_template_list}[ rand @{$self->title_template_list()} ];
     my $formatter = Text::Sprintf::Named->new(
-        {fmt => $title_fmt}
+        { fmt => $title_fmt }
     );
     my %fmt_hash = $self->fmt_hash;
 
-    my $title = $formatter->format({args => \%fmt_hash});
-    chomp ($title);
+    my $title = $formatter->format({ args => \%fmt_hash });
+    chomp($title);
     return $title;
 }
 
 sub _capitalise {
     my $self = shift;
-    $_ = lc (shift);
+    $_ = lc(shift);
     s/\.jpe?g//;
     s/_/ /g;
     s/(?<=\b)(.)/\u$1/g;

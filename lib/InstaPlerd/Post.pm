@@ -33,15 +33,15 @@ sub file_type {
 }
 
 around BUILDARGS => sub {
-    my $orig  = shift;
+    my $orig = shift;
     my $class = shift;
     my %args = @_;
 
     # Inject preferences from the global plerd config
-    if ($args{plerd}{ extension_preferences }{ $class }){
+    if ($args{plerd}{ extension_preferences }{ $class }) {
         my $plugin_prefs = $args{plerd}->{ extension_preferences }{ $class };
-        foreach my $key (%{$plugin_prefs}){
-            if ($key eq 'filter' && ! defined $args { filter }) {
+        foreach my $key (%{$plugin_prefs}) {
+            if ($key eq 'filter' && !defined $args{ filter }) {
                 load $$plugin_prefs{ $key };
                 $args{$key} = $$plugin_prefs{ $key }->new();
             }
@@ -53,7 +53,7 @@ around BUILDARGS => sub {
         }
     }
     # load the default filter if none is specified ...
-    unless (defined ${args}{'filter'}){
+    unless (defined ${args}{'filter'}) {
         load InstaPlerd::Filters::Artistic;
     }
 
@@ -62,76 +62,76 @@ around BUILDARGS => sub {
 };
 
 has 'source_image' => (
-        is      => 'rw',
-        isa     => 'Maybe[Image::Magick]',
-        default => sub {Image::Magick->new()},
-    );
+    is      => 'rw',
+    isa     => 'Maybe[Image::Magick]',
+    default => sub {Image::Magick->new()},
+);
 
 has 'width' => (
-        is      => 'ro',
-        isa     => 'Int',
-        default => 847
-    );
+    is      => 'ro',
+    isa     => 'Int',
+    default => 847
+);
 
 has 'height' => (
-        is      => 'ro',
-        isa     => 'Int',
-        default => 840
-    );
+    is      => 'ro',
+    isa     => 'Int',
+    default => 840
+);
 
 has 'image_compression' => (
-        is  => 'rw',
-        isa => 'Int',
-        default => 85
-    );
+    is      => 'rw',
+    isa     => 'Int',
+    default => 85
+);
 
 has 'instaplerd_template_file' => (
-        is         => 'ro',
-        isa        => 'Path::Class::File',
-        lazy_build => 1
-    );
+    is         => 'ro',
+    isa        => 'Path::Class::File',
+    lazy_build => 1
+);
 
 has 'exif_helper' => (
-        is  => 'rw',
-        isa => 'InstaPlerd::ExifHelper',
-    );
+    is  => 'rw',
+    isa => 'InstaPlerd::ExifHelper',
+);
 
 has 'resize_source_picture' => (
-        is      => 'rw',
-        isa     => 'Bool',
-        default => 1
-    );
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 1
+);
 
 has 'do_geo_lookup' => (
-        is      => 'rw',
-        isa     => 'Bool',
-        default => 1
-    );
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 1
+);
 
 has 'source_file' => (
-        is       => 'ro',
-        isa      => 'Path::Class::File',
-        required => 1,
-        trigger  => \&_process_source_file,
-    );
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    trigger  => \&_process_source_file,
+);
 
 has 'filter' => (
-        is      => 'rw',
-        isa     => 'InstaPlerd::Filter',
-        lazy_build => 1,
-    );
+    is         => 'rw',
+    isa        => 'InstaPlerd::Filter',
+    lazy_build => 1,
+);
 
 has 'util' => (
-        is      => 'ro',
-        isa     => 'InstaPlerd::Util',
-        default => sub {InstaPlerd::Util->new()}
+    is      => 'ro',
+    isa     => 'InstaPlerd::Util',
+    default => sub {InstaPlerd::Util->new()}
 
-    );
+);
 
 has 'title_generator' => (
-        is      => 'rw',
-        isa     => 'InstaPlerd::TitleGenerator',
-    );
+    is  => 'rw',
+    isa => 'InstaPlerd::TitleGenerator',
+);
 
 
 
@@ -149,18 +149,17 @@ sub _process_source_file {
         foreach my $key (@ordered_attributes) {
             $attributes{$key} = $$source_meta{$key} if exists $$source_meta{$key}
         };
-    } catch {
-        carp (sprintf ("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
+    }
+    catch {
+        carp(sprintf("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
         $attributes_need_to_be_written_out = 1;
     };
-
 
     $self->exif_helper(
         InstaPlerd::ExifHelper->new
             (source_file => $self->source_file));
     $self->title_generator(
         InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
-
 
     $self->attributes(\%attributes);
 
@@ -190,7 +189,7 @@ sub _process_source_file {
         };
         unless ($self->date) {
             die 'Error processing ' . $self->source_file . ': '
-                    . 'The "time" attribute is not in W3C format.'
+                . 'The "time" attribute is not in W3C format.'
             ;
         }
     }
@@ -215,8 +214,8 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
-    if ( $attributes{ location } && %{ $attributes{ location } } ) {
-        $self->exif_helper->geo_data( $attributes{ location } );
+    if ($attributes{ location } && %{$attributes{ location }}) {
+        $self->exif_helper->geo_data($attributes{ location });
     }
     elsif ($self->do_geo_lookup) {
         if ($self->exif_helper->geo_data) {
@@ -225,12 +224,13 @@ sub _process_source_file {
         }
     }
 
-    if ( $attributes{ filter } ){
+    if ($attributes{ filter }) {
         # TODO
         my $filter = 'InstaPlerd::Filters::' . $attributes{ filter };
         load $filter;
-        $self->filter( $filter->new() );
-    } else {
+        $self->filter($filter->new());
+    }
+    else {
         $attributes_need_to_be_written_out = 1;
         $attributes{ filter } = $self->filter->name;
     }
@@ -246,29 +246,29 @@ sub _process_source_file {
         $self->image_alt($self->plerd->image_alt || '');
     }
 
-    my $published_filename_jpg = $attributes { published_filename };
+    my $published_filename_jpg = $attributes{ published_filename };
     $published_filename_jpg =~ s/\.html?$/.jpeg/i;
 
-    my $target_jpg_file_path =  File::Spec->catfile(
-            $self->plerd->publication_path, 'images', $published_filename_jpg);
+    my $target_jpg_file_path = File::Spec->catfile(
+        $self->plerd->publication_path, 'images', $published_filename_jpg);
 
-    if ( -e $target_jpg_file_path && $attributes{ checksum }) {
+    if (-e $target_jpg_file_path && $attributes{ checksum }) {
 
         my $fh = Path::Class::File->new($target_jpg_file_path);
         my $checksum = md5_hex($fh->slurp(iomode => '<:raw'));
         if ($checksum ne $attributes{ checksum }) {
             printf "checksum for '%s' has changed. On disk: <%s>, in '%s' meta: <%s>. Regenerating it usw.\n",
-                $fh->basename, ${ checksum }, $self->source_file->basename, $attributes{ checksum };
+                $fh->basename, ${checksum}, $self->source_file->basename, $attributes{ checksum };
             $image_needs_to_be_published = 1;
             $attributes_need_to_be_written_out = 1;
         }
-    } else {
+    }
+    else {
         printf "checksum for '%s' not stored in META. Generating image usw.\n",
-             $self->source_file->basename, $attributes{ checksum };
+            $self->source_file->basename, $attributes{ checksum };
         $image_needs_to_be_published = 1;
         $attributes_need_to_be_written_out = 1;
     }
-
 
     $self->plerd->template->process(
         $self->instaplerd_template_file->open('<:encoding(utf8)'),
@@ -301,16 +301,16 @@ sub _process_source_file {
             'gravity'  => 'Center',
             'geometry' =>
                 $height / $self->height < $width / $self->width
-                ? sprintf 'x%i', $self->height
-                : sprintf '%ix', $self->width
+                    ? sprintf 'x%i', $self->height
+                    : sprintf '%ix', $self->width
         );
 
         $destination_image->Crop(
             'gravity'  => 'Center',
-            'geometry' => sprintf ("%ix%i", $self->width, $self->height),
+            'geometry' => sprintf("%ix%i", $self->width, $self->height),
         );
 
-         # Here is where the magic happens
+        # Here is where the magic happens
         mkpath(File::Spec->catdir(
             $self->plerd->publication_path, 'images'));
 

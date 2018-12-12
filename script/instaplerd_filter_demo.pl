@@ -14,7 +14,6 @@ use Module::Load;
 use Image::Magick;
 use Text::MultiMarkdown 'markdown';
 
-
 my $width = 300;
 my $height = 300;
 my $cols;
@@ -25,33 +24,31 @@ my $man = 0;
 my $output_format = 'md';
 my $output_dir = "filterdemo";
 
+GetOptions("width=i"  => \$width,
+    "height=i"        => \$height,
+    "cols=i"          => \$cols,
+    "output-format=s" => \$output_format,
+    "output-dir=s"    => \$output_dir,
+    "filters=s"       => \@filters,
+    "help=i"          => \$help,
+    "man"             => \$man
+) or pod2usage(-exitval => 2, -verbose => 1);
 
-
-GetOptions (  "width=i"         => \$width,
-              "height=i"        => \$height,
-              "cols=i"          => \$cols,
-              "output-format=s" => \$output_format,
-              "output-dir=s"    => \$output_dir,
-              "filters=s"       => \@filters,
-              "help=i"          => \$help,
-              "man"             => \$man
-) or pod2usage( -exitval => 2, -verbose => 1 );
-
-pod2usage(-exitval => 0, -verbose => 1 ) if $help;
-pod2usage(-exitval => 0, -verbose => 2 ) if $man;
+pod2usage(-exitval => 0, -verbose => 1) if $help;
+pod2usage(-exitval => 0, -verbose => 2) if $man;
 die "illegal output format.\n" unless ($output_format =~ m/^(:?html?|md|markdown)$/i);
 
 my $img_dir = 'images';
 push @filters, qw/Nofilter Artistic ArtisticGrayScale Nelville Batman Pi/ unless @filters;
 
-$cols ||= @filters < 10? @filters: 3;
+$cols ||= @filters < 10 ? @filters : 3;
 
 mkpath($output_dir);
 mkpath(File::Spec->catdir($output_dir, $img_dir));
 
 
 # Load alla filters
-load 'InstaPlerd::Filters::' . $_ for(@filters);
+load 'InstaPlerd::Filters::' . $_ for (@filters);
 
 my @generated_files;
 
@@ -65,12 +62,12 @@ sub crop_and_scale {
         'gravity'  => 'Center',
         'geometry' =>
             $theight / $height < $twidth / $width
-            ? sprintf 'x%i', $height
-            : sprintf '%ix', $width
+                ? sprintf 'x%i', $height
+                : sprintf '%ix', $width
     );
     $image->Crop(
         'gravity'  => 'Center',
-        'geometry' => sprintf ("%ix%i", $width, $height),
+        'geometry' => sprintf("%ix%i", $width, $height),
     );
     $image->Strip();
     return $image;
@@ -103,24 +100,25 @@ sub create_md {
 
     if ($filters_are_headlines) {
         $body .= "| $_" for @filters;
-    } else {
+    }
+    else {
         $body .= "|  " x $cols;
     }
 
-    $body.="\n|";
-    $body.= " --- |" x $cols;
-    $body.="\n";
+    $body .= "\n|";
+    $body .= " --- |" x $cols;
+    $body .= "\n";
 
     foreach my $generaded_object (@generated_objects) {
         $i++;
         my $filter_name = (split("_", $generaded_object))[0];
 
-        $body.= sprintf '| ![img alt](%s "%s") ', File::Spec->catfile($img_dir, $generaded_object), $filter_name;
-        push (@filters_used, $filter_name) unless $filters_are_headlines;
+        $body .= sprintf '| ![img alt](%s "%s") ', File::Spec->catfile($img_dir, $generaded_object), $filter_name;
+        push(@filters_used, $filter_name) unless $filters_are_headlines;
         if ($i % $cols == 0) {
             $body .= "|\n";
             unless ($filters_are_headlines) {
-                while (my $f = shift @filters_used){
+                while (my $f = shift @filters_used) {
                     $body .= "| ${f} ";
                 }
                 $body .= "|\n";
@@ -128,11 +126,11 @@ sub create_md {
         }
     }
     if (@generated_objects % $cols != 0) {
-        for (my $i = @generated_objects; $i % $cols != 0 ; $i++ ){
-            $body+= "| ";
+        for (my $i = @generated_objects; $i % $cols != 0; $i++) {
+            $body += "| ";
             push @filters_used, "-";
         }
-        while (my $f = shift @filters_used){
+        while (my $f = shift @filters_used) {
             unless ($filters_are_headlines) {
                 $body .= "| ${f}";
             }
@@ -165,12 +163,13 @@ if ($output_format =~ m/html?/i) {
 
     $body = '<html><head><title>InstaPlerd Filter demo</title></head><body>' .
         markdown($body) . '</body></html>';
-} else {
+}
+else {
     $out_file = 'instaplerd_demo.md'
 }
 
 my $dst_file = file(File::Spec->catfile($output_dir, $out_file));
-$dst_file->spew( iomode=>'>:encoding(utf8)', $body );
+$dst_file->spew(iomode => '>:encoding(utf8)', $body);
 
 say "Great success, go have a look at $dst_file!!";
 

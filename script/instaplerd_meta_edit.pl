@@ -17,23 +17,23 @@ my $jsondump = 0;
 my $help = 0;
 my $man = 0;
 
-GetOptions (  "list"     => \$list,
-              "help"     => \$help,
-              "man"      => \$man,
-              "clear"    => \$clear,
-              "jsondump"     => \$jsondump,
-              "deltag=s" => \@deltags)
-or pod2usage( -exitval => 2, -verbose => 1 );
+GetOptions("list" => \$list,
+    "help"        => \$help,
+    "man"         => \$man,
+    "clear"       => \$clear,
+    "jsondump"    => \$jsondump,
+    "deltag=s"    => \@deltags)
+    or pod2usage(-exitval => 2, -verbose => 1);
 
-pod2usage(-exitval => 0, -verbose => 1 ) if $help;
-pod2usage(-exitval => 0, -verbose => 2 ) if $man;
+pod2usage(-exitval => 0, -verbose => 1) if $help;
+pod2usage(-exitval => 0, -verbose => 2) if $man;
 
 my $stream = $jsondump ? \*STDERR : \*STDOUT;
 
 while (<@ARGV>) {
 
     printf $stream "\nProcessing [%-s]:\n", basename($_);
-    if (! -e || ! m/\.jpe?g$/i ) {
+    if (!-e || !m/\.jpe?g$/i) {
         warn "No good file $_\n";
     }
     elsif ($jsondump) {
@@ -62,22 +62,25 @@ sub do_stuff {
     my $item = shift || "";
     my $change = 0;
 
-    foreach my $key ( sort {$a cmp $b} keys %{$meta} ){
+    foreach my $key (sort {$a cmp $b} keys %{$meta}) {
         my $rel_key = $item eq "" ? $key : "$item.$key";
 
         if ($key ~~ @deltags) {
-            printf "%${indent}s - %-s\n",  $rel_key, "*** DELETED ***";
-            delete ($$meta{$key});
+            printf "%${indent}s - %-s\n", $rel_key, "*** DELETED ***";
+            delete($$meta{$key});
             $change++;
-        } else {
+        }
+        else {
             if (ref $$meta{$key} eq 'HASH') {
                 printf "%${indent}s = {\n", $rel_key;
                 $change += do_stuff($file, $$meta{$key}, $indent + 20, $rel_key);
                 printf "    %${indent}s\n", "}";
-            } elsif (ref $$meta{$key} eq 'ARRAY') {
-                printf "%${indent}s = [%-s]\n",  $rel_key, join (', ', @{$$meta{$key}});
-            } else {
-               printf "%${indent}s = '%-s'\n",  $rel_key, $$meta{$key};
+            }
+            elsif (ref $$meta{$key} eq 'ARRAY') {
+                printf "%${indent}s = [%-s]\n", $rel_key, join(', ', @{$$meta{$key}});
+            }
+            else {
+                printf "%${indent}s = '%-s'\n", $rel_key, $$meta{$key};
             }
         }
     }

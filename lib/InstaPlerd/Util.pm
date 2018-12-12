@@ -8,16 +8,16 @@ use JSON;
 use utf8;
 
 has 'json' => (
-        is      => 'ro',
-        isa     => 'JSON',
-        default => sub {JSON->new->utf8->allow_nonref}
-    );
+    is      => 'ro',
+    isa     => 'JSON',
+    default => sub {JSON->new->utf8->allow_nonref}
+);
 
 has 'exiftool' => (
-        is      => 'ro',
-        isa     => 'Image::ExifTool',
-        default => sub {Image::ExifTool->new()}
-    );
+    is      => 'ro',
+    isa     => 'Image::ExifTool',
+    default => sub {Image::ExifTool->new()}
+);
 
 sub decode {
     my $self = shift;

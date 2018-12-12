@@ -19,7 +19,7 @@ sub _apply {
     $specs->AddNoise("Laplacian");
 
     $source_image->AutoGamma;
-    $source_image->Composite(compose => 'Overlay', image=>$specs, opacity=>'40%');
+    $source_image->Composite(compose => 'Overlay', image => $specs, opacity => '40%');
 
     return $source_image;
 }
