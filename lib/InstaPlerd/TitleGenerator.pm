@@ -126,6 +126,9 @@ sub generate_title {
 sub _build_time_of_day {
     my $self = shift;
 
+    unless ($self->exif_helper->timestamp) {
+        return "unknown time of day";
+    }
     my $h = $self->exif_helper->timestamp->hour;
     if ($h < 5) {
         return 'late night'

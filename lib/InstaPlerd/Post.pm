@@ -265,7 +265,7 @@ sub _process_source_file {
     }
     else {
         printf "checksum for '%s' not stored in META. Generating image usw.\n",
-            $self->source_file->basename, $attributes{ checksum };
+            $self->source_file->basename;
         $image_needs_to_be_published = 1;
         $attributes_need_to_be_written_out = 1;
     }

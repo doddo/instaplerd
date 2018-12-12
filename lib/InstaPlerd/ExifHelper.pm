@@ -110,8 +110,13 @@ sub _build_exif_data {
             }
         }
     }
-    # ¯\_(ツ)_/¯
-    $$exif{DateTime} = $timestamp;
+    if ($timestamp) {
+        # ¯\_(ツ)_/¯
+        $$exif{DateTime} = $timestamp;
+    } else {
+        carp "Unable to parse date from exif data.";
+        # TODO try to grab it from filename instead.
+    }
     return $exif;
 }
 
