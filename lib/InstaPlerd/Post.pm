@@ -133,6 +133,12 @@ has 'title_generator' => (
     isa => 'InstaPlerd::TitleGenerator',
 );
 
+sub BUILD {
+    my $self = shift;
+    if (! -f $self->instaplerd_template_file) {
+        carp sprintf ("Can't load '%s'\n", $self->instaplerd_template_file);
+    }
+};
 
 
 sub _process_source_file {
