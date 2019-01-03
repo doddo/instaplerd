@@ -7,6 +7,8 @@ use Image::ExifTool qw(:Public);
 use JSON;
 use utf8;
 
+use Carp qw\cluck\;
+
 has 'json' => (
     is      => 'ro',
     isa     => 'JSON',
@@ -46,7 +48,11 @@ sub save_image_meta {
 
     my $payload = $self->json->encode($meta);
     $self->exiftool->SetNewValue(Comment => $payload);
-    $self->exiftool->WriteInfo($image);
+    my $rval = $self->exiftool->WriteInfo($image);
+    unless ($rval){
+        cluck (sprintf "Unable to write meta for %s: Error:[%s]", $image, $exifTool->GetValue('Error'));
+    }
+    return $rval;
 }
 
 1;
