@@ -50,7 +50,13 @@ while (<@ARGV>) {
     else {
         my $meta = $util->load_image_meta($_);
         if (do_stuff($_, $meta)) {
-            $util->save_image_meta($_, $meta);
+            my $rval = $util->save_image_meta($_, $meta);
+            if ($rval == 2) {
+                say "No Changes Made to $_.";
+            }
+            else {
+                say "Saving changes to $_.";
+            }
         }
     }
 }
