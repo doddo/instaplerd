@@ -283,7 +283,7 @@ sub _process_source_file {
             posts        => [ $self ],
             title        => $self->title,
             width        => $self->width,
-            heigth       => $self->height,
+            height       => $self->height,
             exif         => $self->exif_helper->exif_data,
             filter       => $attributes{ filter },
             location     => $attributes{ location }{ address } || undef,
