@@ -50,7 +50,8 @@ sub save_image_meta {
     $self->exiftool->SetNewValue(Comment => $payload);
     my $rval = $self->exiftool->WriteInfo($image);
     unless ($rval){
-        cluck (sprintf "Unable to write meta for %s: Error:[%s]", $image, $exifTool->GetValue('Error'));
+        cluck (sprintf "Unable to write meta for %s: Error:[%s]",
+            $image, $self->exifTool->GetValue('Error'));
     }
     return $rval;
 }
