@@ -28,12 +28,14 @@ sub _apply {
     $beige->Colorize(fill => '#f7daae', blend => "100%"); # Beige
 
     $beige->Composite(compose => 'Blend', image => $gray);
-    $beige->Composite(compose => 'Multiply', image => $blue);
-    $source_image->Set("compose:args", "55");
-    $source_image->Composite(compose => 'Blend', image => $beige);
+
+    $beige->Set("compose:args", "50x50");
+    $beige->Composite(compose => 'Multiply', image => $blue, blend => "50x50");
+
+    $source_image->Set("compose:args", "40x60");
+    $source_image->Composite(compose => 'Blend', image => $beige, blend => "50x50");
 
     $source_image->Modulate(100, 150, 100);
-    $source_image->AutoGamma;
 
     return $self->add_frame($source_image, '100%');
 }
