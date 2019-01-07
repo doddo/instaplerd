@@ -68,9 +68,10 @@ sub location_with_random_precision {
     my $self = shift;
     my $geo = $self->exif_helper->geo_data();
     my @interesting_keys_in = qw/country state county
-        city suburb town/;
+        city suburb town road city_district/;
     my @uninteresting_keys = qw/house_number postcode country_code/;
     my @loc;
+    my $special;
 
     if (defined $geo && defined $$geo{ address } && defined $$geo{ address }) {
         my $address = $$geo{ address };
@@ -84,15 +85,29 @@ sub location_with_random_precision {
             else {
                 # Assume this key is something super special or something
                 unshift @loc, [ 'at', $value ];
+                $special++;
             }
         }
     }
 
-    # Gravitate towards more specific location with this trick:
+    my @title;
+    if ($special) {
+        push @title, splice(@loc, rand $special, 1);
+
+    }
     my $i = rand @loc;
     my $j = rand @loc;
 
-    return $i < $j ? $loc[$i] : $loc[$j];
+    my @p;
+    push @title, $i < $j ? $loc[$i] : $loc[$j];
+    my $spec = $title[0][0];
+
+    foreach my $t (@title) {
+        push @p, $$t[-1];
+    }
+
+    return [ $spec, join(', ', @p) ]
+
 }
 
 sub fmt_hash {
@@ -173,7 +188,10 @@ sub _build_season {
     };
     return undef if $@;
 
-    if ($m >= 3 && $m < 6) {
+    if ($m < 3) {
+        return $lat eq 'North' ? 'winter' : 'summer'
+    }
+    elsif ($m < 6) {
         # March 1 to May 31;
         return $lat eq 'North' ? 'spring' : ('fall', 'autumn')[rand 2]
     }

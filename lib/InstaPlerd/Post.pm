@@ -162,8 +162,10 @@ sub _process_source_file {
     };
 
     $self->exif_helper(
-        InstaPlerd::ExifHelper->new
-            (source_file => $self->source_file));
+        InstaPlerd::ExifHelper->new(
+            source_file => $self->source_file,
+            geo_data    => $attributes{location} // undef,
+        ));
     $self->title_generator(
         InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
 
