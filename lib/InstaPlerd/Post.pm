@@ -167,7 +167,7 @@ sub _process_source_file {
         ));
 
     if ($attributes{location} // 0){
-        $self->exif_helper($attributes{location});
+        $self->exif_helper->geo_data($attributes{location});
     }
 
     $self->title_generator(
