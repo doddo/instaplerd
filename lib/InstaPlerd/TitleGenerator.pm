@@ -76,10 +76,11 @@ sub location_with_random_precision {
     if (defined $geo && defined $$geo{ address } && defined $$geo{ address }) {
         my $address = $$geo{ address };
         while (my ($key, $value) = each(%{$address})) {
-            if ($key ~~ @uninteresting_keys) {
+
+            if (map {$key =~ $_ } @uninteresting_keys){
                 next;
             }
-            elsif ($key ~~ @interesting_keys_in) {
+            elsif (map {$key =~ $_ } @interesting_keys_in) {
                 push @loc, [ 'in', $value ];
             }
             else {
