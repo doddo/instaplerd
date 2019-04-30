@@ -16,11 +16,15 @@ my $clear = 0;
 my $jsondump = 0;
 my $help = 0;
 my $man = 0;
+my $verbose = 0;
+my $grep;
 
 GetOptions("list" => \$list,
     "help"        => \$help,
     "man"         => \$man,
     "clear"       => \$clear,
+    "grep=s"      => \$grep,
+    "verbose"     => \$verbose,
     "jsondump"    => \$jsondump,
     "deltag=s"    => \@deltags)
     or pod2usage(-exitval => 2, -verbose => 1);
@@ -28,36 +32,50 @@ GetOptions("list" => \$list,
 pod2usage(-exitval => 0, -verbose => 1) if $help;
 pod2usage(-exitval => 0, -verbose => 2) if $man;
 
-my $stream = $jsondump ? \*STDERR : \*STDOUT;
+my $stream = $jsondump || $grep ? \*STDERR : \*STDOUT;
 
-while (<@ARGV>) {
+my $filename;
+while ($filename = <@ARGV>) {
 
-    printf $stream "\nProcessing [%-s]:\n", basename($_);
-    if (!-e || !m/\.jpe?g$/i) {
-        warn "No good file $_\n";
+    printf $stream "\nProcessing [%-s]:\n", basename($filename) if $verbose;
+    if (!-e $filename || $filename !~ m/\.jpe?g$/i) {
+        warn "No good file $filename\n";
     }
     elsif ($jsondump) {
-        die "can't use clear in combination with 'deltag' ...\n"
-            if (@deltags);
-        say $util->encode($util->load_image_meta($_));
+        die "can't use clear in combination with 'deltag' or 'grep' ...\n"
+            if (@deltags || $grep);
+        say $util->encode($util->load_image_meta($filename));
     }
     elsif ($clear) {
-        die "can't use clear in combination with 'list', 'deltag' ...\n"
-            if ($list || @deltags);
+        die "can't use clear in combination with 'list', 'grep' or 'deltag' ...\n"
+            if ($list || @deltags || $grep);
         say "Deleting all InstaPlerd meta...";
-        $util->save_image_meta($_, {});
+        $util->save_image_meta($filename, {});
     }
     else {
-        my $meta = $util->load_image_meta($_);
-        if (do_stuff($_, $meta)) {
-            my $rval = $util->save_image_meta($_, $meta);
-            if ($rval == 2) {
-                say "No Changes Made to $_.";
-            }
-            else {
-                say "Saving changes to $_.";
+        my $meta = $util->load_image_meta($filename);
+        if (do_stuff($filename, $meta)) {
+            if (!$grep) {
+                my $rval = $util->save_image_meta($filename, $meta);
+                if ($rval == 2) {
+                    say "No Changes Made to $filename.";
+                }
+                else {
+                    say "Saving changes to $filename.";
+                }
             }
         }
+    }
+}
+
+sub maybe_print(@) {
+    if ($grep) {
+        my $candidate = shift;
+        my $grep = qr{$grep}i;
+        say $filename . ':' . $candidate  =~ s/^\s+//r if ($candidate =~ $grep);
+    }
+    else {
+        printf shift;
     }
 }
 
@@ -71,22 +89,22 @@ sub do_stuff {
     foreach my $key (sort {$a cmp $b} keys %{$meta}) {
         my $rel_key = $item eq "" ? $key : "$item.$key";
 
-        if ($key ~~ @deltags) {
-            printf "%${indent}s - %-s\n", $rel_key, "*** DELETED ***";
+        if (grep /^\Q$key$/, @deltags) {
+            maybe_print sprintf "%${indent}s - %-s\n", $rel_key, "*** DELETED ***";
             delete($$meta{$key});
             $change++;
         }
         else {
             if (ref $$meta{$key} eq 'HASH') {
-                printf "%${indent}s = {\n", $rel_key;
+                maybe_print sprintf "%${indent}s = {\n", $rel_key;
                 $change += do_stuff($file, $$meta{$key}, $indent + 20, $rel_key);
-                printf "    %${indent}s\n", "}";
+                maybe_print sprintf "    %${indent}s\n", "}";
             }
             elsif (ref $$meta{$key} eq 'ARRAY') {
-                printf "%${indent}s = [%-s]\n", $rel_key, join(', ', @{$$meta{$key}});
+                maybe_print sprintf "%${indent}s = [%-s]\n", $rel_key, join(', ', @{$$meta{$key}});
             }
             else {
-                printf "%${indent}s = '%-s'\n", $rel_key, $$meta{$key};
+                maybe_print sprintf "%${indent}s = '%-s'\n", $rel_key, $$meta{$key};
             }
         }
     }
@@ -109,7 +127,8 @@ instaplerd_meta_edit.pl [option ...] [file ...]
    --man             read embedded man page
    --list            list InstaPlerd meta from file(s)
    --clear           swipe away InstaPlerd meta from file(s)
-   --deltag [tag]    Delete InstaPlerd meta with [tag] from file(s)
+   --grep MATCH      Find file matching tag in file
+   --deltag TAG      Delete InstaPlerd meta with [tag] from file(s)
    --jsondump        Dump InstaPlerd meta from file(s) in JSON format
 
 =head1 OPTIONS
@@ -122,7 +141,7 @@ Print a brief help message and exits.
 
 =item B<--man>
 
-Red the embedded man page
+Read the embedded man page
 
 =item B<--list>
 
@@ -131,6 +150,10 @@ list InstaPlerd meta from file(s)
 =item B<--clear>
 
 Swipe away InstaPlerd meta from file by setting the comment to an empty json {}
+
+=item B<--grep>
+
+Find metadata which matches case insensitive regex "MATCH" in files, and print the file names and matching attr.
 
 =item B<--deltag>
 
