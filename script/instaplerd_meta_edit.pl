@@ -102,7 +102,7 @@ sub do_stuff {
         }
         elsif ((grep $key eq $_, keys %settags) && ref $$meta{$key} ne 'HASH') {
             if ($$meta{$key} ne $settags{$key}) {
-                maybe_print sprintf "%${indent}s = *** NEW VALUE *** '%-s'\n", $rel_key, $$meta{$key};
+                maybe_print sprintf "%${indent}s = *** NEW VALUE *** '%-s'\n", $rel_key, $settags{$key};
                 $$meta{$key} = $settags{$key};
                 $change++;
             } else {
