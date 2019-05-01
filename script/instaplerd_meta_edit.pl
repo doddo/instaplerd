@@ -10,6 +10,8 @@ use File::Basename qw/basename/;
 use Pod::Usage qw/pod2usage/;
 
 my @deltags;
+my @settags;
+my %settags;
 my $list;
 my $util = InstaPlerd::Util->new;
 my $clear = 0;
@@ -26,13 +28,17 @@ GetOptions("list" => \$list,
     "grep=s"      => \$grep,
     "verbose"     => \$verbose,
     "jsondump"    => \$jsondump,
-    "deltag=s"    => \@deltags)
+    "deltag=s"    => \@deltags,
+    "settag=s"    => \@settags)
     or pod2usage(-exitval => 2, -verbose => 1);
 
 pod2usage(-exitval => 0, -verbose => 1) if $help;
 pod2usage(-exitval => 0, -verbose => 2) if $man;
 
 my $stream = $jsondump || $grep ? \*STDERR : \*STDOUT;
+
+%settags = map { m/^([^:]+):(.+)$/; $1 => $2 } @settags;
+
 
 my $filename;
 while ($filename = <@ARGV>) {
@@ -42,13 +48,13 @@ while ($filename = <@ARGV>) {
         warn "No good file $filename\n";
     }
     elsif ($jsondump) {
-        die "can't use clear in combination with 'deltag' or 'grep' ...\n"
-            if (@deltags || $grep);
+        die "can't use clear in combination with 'grep', 'settag' or 'deltag' ...\n"
+            if (@deltags || $grep || @settags);
         say $util->encode($util->load_image_meta($filename));
     }
     elsif ($clear) {
-        die "can't use clear in combination with 'list', 'grep' or 'deltag' ...\n"
-            if ($list || @deltags || $grep);
+        die "can't use clear in combination with 'list', 'grep', 'settag' or 'deltag' ...\n"
+            if ($list || @deltags || $grep || @settags);
         say "Deleting all InstaPlerd meta...";
         $util->save_image_meta($filename, {});
     }
@@ -89,10 +95,19 @@ sub do_stuff {
     foreach my $key (sort {$a cmp $b} keys %{$meta}) {
         my $rel_key = $item eq "" ? $key : "$item.$key";
 
-        if (grep /^\Q$key$/, @deltags) {
+        if (grep $key eq $_, @deltags) {
             maybe_print sprintf "%${indent}s - %-s\n", $rel_key, "*** DELETED ***";
             delete($$meta{$key});
             $change++;
+        }
+        elsif ((grep $key eq $_, keys %settags) && ref $$meta{$key} ne 'HASH') {
+            if ($$meta{$key} ne $settags{$key}) {
+                maybe_print sprintf "%${indent}s = *** NEW VALUE *** '%-s'\n", $rel_key, $$meta{$key};
+                $$meta{$key} = $settags{$key};
+                $change++;
+            } else {
+                maybe_print sprintf "%${indent}s = *** UNCHANGED *** '%-s'\n", $rel_key, $$meta{$key};
+            }
         }
         else {
             if (ref $$meta{$key} eq 'HASH') {
@@ -129,6 +144,7 @@ instaplerd_meta_edit.pl [option ...] [file ...]
    --clear           swipe away InstaPlerd meta from file(s)
    --grep MATCH      Find file matching tag in file
    --deltag TAG      Delete InstaPlerd meta with [tag] from file(s)
+   --settag TAG:VAL  Set the TAG to VAL if TAG is set
    --jsondump        Dump InstaPlerd meta from file(s) in JSON format
 
 =head1 OPTIONS
@@ -158,6 +174,17 @@ Find metadata which matches case insensitive regex "MATCH" in files, and print t
 =item B<--deltag>
 
 Remove any given tag from the InstaPlerd meta in the file. Can be specified multiple times to specify multiple tags.
+
+=item B<--settag TAG:VAL>
+
+Set the tag TAG to VAL if TAG is set. The TAG field is separated from the VAL field by the colon ':' separator.
+
+--settag filter:Batman for example
+
+Can be specified multiple times to specify multiple tags.
+
+Beware that with this flag you can mess up the metadata in such a way that crashes instaplerd.
+
 
 =item B<--jsondump>
 
