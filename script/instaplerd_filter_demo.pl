@@ -29,7 +29,7 @@ GetOptions("width=i"  => \$width,
     "cols=i"          => \$cols,
     "output-format=s" => \$output_format,
     "output-dir=s"    => \$output_dir,
-    "filters=s"       => \@filters,
+    "filter=s"        => \@filters,
     "help=i"          => \$help,
     "man"             => \$man
 ) or pod2usage(-exitval => 2, -verbose => 1);
@@ -192,7 +192,7 @@ instaplerd_filter_demo.pl [option ...] FILE ... [FILE ...]
    --cols   COLS                     columns per row of images
    --output-format  [html | md]      Output format, either html or markdown
    --output-dir OUTPUT_DIR           Output directory for the rendered pictures and associated files.
-   --filters FILTER                  filter to use, can be used multiple times to specify multiple filters.
+   --filter FILTER                   filter to use, can be used multiple times to specify multiple filters.
                                      Defaults to all filters.
    --help                            Brief help message
    --man                             read embedded man page
@@ -217,7 +217,7 @@ Amount of columns to use, defaults to amount of specified filters if less than 1
 
 Specify output format to use Either html or markdown (md). Defaults to md.
 
-=item B<--output-dir [html|md]>
+=item B<--output-dir OUTPUT_DIR>
 
 Specify what output dir to put the resulting images and file. Defaults to 'filterdemo'
 
