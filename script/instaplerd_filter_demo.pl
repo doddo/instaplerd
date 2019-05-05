@@ -227,7 +227,7 @@ Print a brief help message and exits.
 
 =item B<--man>
 
-Red the embedded man page
+Read the embedded man page
 
 
 
@@ -243,7 +243,20 @@ B<instaplerd_filter_demo.pl> is used to generate a filter demo by applying Insta
 
 =item B<generate nice html demo>
 
-instaplerd_filter_demo.pl --output-dir /tmp/testabs  --output-format html IMG_20181105_215107.jpg IMG_20181113_123627.jpg IMG_20181115_184251.jpg
+    $ instaplerd_filter_demo.pl --output-dir /tmp/testabs  --output-format html \
+       IMG_20181105_215107.jpg IMG_20181113_123627.jpg IMG_20181115_184251.jpg
+
+
+=item B<generate md demo from specific filters>
+
+    $ instaplerd_filter_demo.pl \
+                      --filter Batman  \
+                      --filter Nelville \
+                      --filter Pi \
+                      --output-format md \
+                      --output-dir /tmp/demo\
+             a_test_image.jpg IMG_20181110_170451.jpg IMG_20190106_214653.jpg
+
 
 =back
 
