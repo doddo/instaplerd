@@ -27,3 +27,4 @@ WORKDIR /tmp/instaplerd
 RUN cpanm  -M https://cpan.metacpan.org  --notest --installdeps .
 RUN cpanm install .
 
+WORKDIR /opt/tuvix 
