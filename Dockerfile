@@ -4,14 +4,16 @@ USER root
 RUN apt update && apt install libperl-dev
 
 WORKDIR /opt/
-RUN wget http://www.imagemagick.org/download/ImageMagick-7.0.8-39.tar.xz 
-RUN tar xvf ImageMagick-7.0.8-39.tar.xz
-RUN (cd ImageMagick-7.0.8-39 &&  ./configure --with-modules=yes --enable-shared=yes --with-quantum-depth=16 --with-perl && make && make install)
-
+ADD https://imagemagick.org/download/releases/ImageMagick-7.0.7-39.tar.xz /opt
+RUN tar xf ImageMagick-7.0.7-39.tar.xz
+WORKDIR /opt/ImageMagick-7.0.7-39
+RUN ./configure --with-modules=yes --enable-shared=yes --with-quantum-depth=16 --with-perl 
+RUN make
+RUN make install
 
 RUN ldconfig
 
-WORKDIR /opt/ImageMagick-7.0.8-39/PerlMagick
+WORKDIR /opt/ImageMagick-7.0.7-39/PerlMagick
 RUN perl Makefile.PL
 RUN make 
 RUN make test
