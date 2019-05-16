@@ -1,12 +1,12 @@
-package InstaPlerd::Filters::Batman;
-use InstaPlerd::Filter;
+package Tuvix::InstaPlugin::Filters::Batman;
+use Tuvix::InstaPlugin::Filter;
 
 use strict;
 use warnings FATAL => 'all';
 
 use Moose;
 
-extends "InstaPlerd::Filter";
+extends "Tuvix::InstaPlugin::Filter";
 
 sub _apply {
     my $self = shift;

@@ -13,7 +13,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 
-use InstaPlerd::Post;
+use Tuvix::InstaPlugin::Post;
 use Plerd;
 
 my $img_file_name = "$FindBin::Bin/source/slask/IMG_20190106_214653_64x64.jpg";
@@ -29,14 +29,14 @@ my $plerd = Plerd->new(
     title            => 'Test Blog',
     author_name      => 'Nobody',
     author_email     => 'nobody@example.com',
-    extensions       => [ 'InstaPlerd' ],
+    extensions       => [ 'Tuvix::InstaPlugin' ],
     base_uri         => URI->new('http://blog.example.com/'),
     image            => URI->new('http://blog.example.com/logo.png'),
 );
 
 my $img_file = Path::Class::File->new($img_file_name);
 
-ok(my $post = InstaPlerd::Post->new(source_file => $img_file, plerd => $plerd));
+ok(my $post = Tuvix::InstaPlugin::Post->new(source_file => $img_file, plerd => $plerd));
 
 unlike($post->title,
     qr/Summer/i,

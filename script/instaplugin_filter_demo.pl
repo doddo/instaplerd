@@ -48,7 +48,7 @@ mkpath(File::Spec->catdir($output_dir, $img_dir));
 
 
 # Load alla filters
-load 'InstaPlerd::Filters::' . $_ for (@filters);
+load 'Tuvix::InstaPlugin::Filters::' . $_ for (@filters);
 
 my @generated_files;
 
@@ -78,7 +78,7 @@ sub do_stuff {
     my $image = shift;
     my @generated_objects;
     foreach my $f (@filters) {
-        my $filter = "InstaPlerd::Filters::${f}"->new();
+        my $filter = "Tuvix::InstaPlugin::Filters::${f}"->new();
 
         my $dst_image = $filter->apply($image->Clone());
         my $img_filename = sprintf "%s_%sx%s_%s", $f, $height, $width, $file->basename;

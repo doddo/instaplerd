@@ -1,11 +1,11 @@
-package InstaPlerd::Filters::Nelville;
+package Tuvix::InstaPlugin::Filters::Nelville;
 use strict;
 use warnings FATAL => 'all';
-use InstaPlerd::Filter;
+use Tuvix::InstaPlugin::Filter;
 
 use Moose;
 
-extends "InstaPlerd::Filter";
+extends "Tuvix::InstaPlugin::Filter";
 
 sub _apply {
     my $self = shift;

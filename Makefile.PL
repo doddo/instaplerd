@@ -7,12 +7,12 @@ use File::ShareDir::Install;
 install_share 'share';
 
 WriteMakefile(
-    NAME             => 'InstaPlerd',
+    NAME             => 'Tuvix::InstaPlugin',
     AUTHOR           => q{Petter H <dr.doddo@gmail.com>},
-    VERSION_FROM     => 'lib/InstaPlerd.pm',
-    ABSTRACT_FROM    => 'lib/InstaPlerd.pm',
+    VERSION_FROM     => 'lib/Tuvix/InstaPlugin.pm',
+    ABSTRACT_FROM    => 'lib/Tuvix/InstaPlugin.pm',
     LICENSE          => 'mit',
-    EXE_FILES        => [qw{script/instaplerd_filter_demo.pl script/instaplerd_meta_edit.pl}],
+    EXE_FILES        => [qw{script/instaplugin_filter_demo.pl script/instaplugin_meta_edit.pl}],
     PMLIBDIRS        => [qw(lib inc)],
 
     MIN_PERL_VERSION => '5.008001',
@@ -51,7 +51,7 @@ WriteMakefile(
 
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean => { FILES => 'InstaPlerd-*' },
+    clean => { FILES => 'Tuvix::InstaPlugin-*' },
 );
 
 package MY;

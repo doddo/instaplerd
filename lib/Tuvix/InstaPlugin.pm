@@ -1,4 +1,4 @@
-package InstaPlerd;
+package Tuvix::InstaPlugin;
 use 5.008001;
 use strict;
 use warnings;
@@ -25,7 +25,7 @@ InstaPlerd - Extend Plerd with photoblog support
 
 =head1 SYNOPSIS
 
-    use InstaPlerd::Post;
+    use Tuvix::InstaPlugin::Post;
 
 =head1 DESCRIPTION
 

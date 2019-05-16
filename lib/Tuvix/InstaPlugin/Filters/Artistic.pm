@@ -1,5 +1,5 @@
-package InstaPlerd::Filters::Artistic;
-use InstaPlerd::Filter;
+package Tuvix::InstaPlugin::Filters::Artistic;
+use Tuvix::InstaPlugin::Filter;
 
 use strict;
 use warnings FATAL => 'all';
@@ -7,7 +7,7 @@ use warnings FATAL => 'all';
 use Moose;
 use Carp;
 
-extends "InstaPlerd::Filter";
+extends "Tuvix::InstaPlugin::Filter";
 
 sub _apply {
     my $self = shift;

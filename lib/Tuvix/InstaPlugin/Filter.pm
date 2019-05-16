@@ -1,9 +1,9 @@
-package InstaPlerd::Filter;
+package Tuvix::InstaPlugin::Filter;
 use strict;
 use warnings FATAL => 'all';
 
 use File::Spec;
-use InstaPlerd qw/$ASSET_DIR/;
+use Tuvix::InstaPlugin qw/$ASSET_DIR/;
 
 use Moose;
 

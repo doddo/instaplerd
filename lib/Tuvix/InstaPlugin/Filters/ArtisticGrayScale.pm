@@ -1,5 +1,5 @@
-package InstaPlerd::Filters::ArtisticGrayScale;
-use InstaPlerd::Filter;
+package Tuvix::InstaPlugin::Filters::ArtisticGrayScale;
+use Tuvix::InstaPlugin::Filter;
 
 use strict;
 use warnings FATAL => 'all';
@@ -7,7 +7,7 @@ use warnings FATAL => 'all';
 use Moose;
 use Carp;
 
-extends "InstaPlerd::Filters::Artistic";
+extends "Tuvix::InstaPlugin::Filters::Artistic";
 
 around '_apply' => sub {
     my $orig = shift;

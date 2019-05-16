@@ -1,4 +1,4 @@
-package InstaPlerd::TitleGenerator;
+package Tuvix::InstaPlugin::TitleGenerator;
 use strict;
 use warnings;
 use Text::Sprintf::Named;
@@ -9,7 +9,7 @@ use Moose;
 
 has 'exif_helper' => (
     is       => 'ro',
-    isa      => 'InstaPlerd::ExifHelper',
+    isa      => 'Tuvix::InstaPlugin::ExifHelper',
     required => 1
 );
 

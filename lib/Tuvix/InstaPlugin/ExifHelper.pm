@@ -1,10 +1,13 @@
-package InstaPlerd::ExifHelper;
+package Tuvix::InstaPlugin::ExifHelper;
 
 use strict;
 use warnings FATAL => 'all';
 use Moose;
 use Carp;
 use utf8;
+
+use Mojo::Log;
+
 
 use Try::Tiny;
 use DateTime::Format::Strptime;
@@ -37,6 +40,12 @@ has 'exiftool' => (
         $tool->Options(CoordFormat => q{%d %d %+.4f});
         return $tool;
     }
+);
+
+has 'log' => (
+    is      => 'rw',
+    isa     => 'Mojo::Log',
+    default => sub { Mojo::Log->new() }
 );
 
 has '_geo_coder' => (
@@ -106,7 +115,8 @@ sub _build_exif_data {
                 }
             }
             catch {
-                carp sprintf "can't make '%s': '%s' into DateTime object.", $key, $value;
+                $self->log->warn(
+                    sprintf"can't make '%s': '%s' into DateTime object.", $key, $value);
             }
         }
     }
@@ -114,7 +124,7 @@ sub _build_exif_data {
         # ¯\_(ツ)_/¯
         $$exif{DateTime} = $timestamp;
     } else {
-        carp "Unable to parse date from exif data.";
+        $self->log->warn("Unable to parse date from exif data.");
         # TODO try to grab it from filename instead.
     }
     return $exif;
@@ -141,14 +151,17 @@ sub _build_geo_data {
         if ($lat_long && $lat_long ne 'NaN') {
             $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
             $$geo_data{latitude} ||= @{$lat_long_dd}[0];
-            $$geo_data{longitude} ||= @{$lat_long_dd}[1];;
+            $$geo_data{longitude} ||= @{$lat_long_dd}[1];
+            $self->log->debug(
+                sprintf "Got geo data [%s]", $$geo_data{display_name} // 'no display_name');
         }
         else {
-            carp sprintf "Could not make decimal lat/long from lat:%s lon:%s", $lat, $lon;
+            $self->log->warn(
+                sprintf("Could not make decimal lat/long from lat:%s lon:%s", $lat, $lon));
         }
     }
     else {
-        carp "No / not enough geo data to process. No lookup will occur.";
+        $self->log->warn("No / not enough geo data to process. No lookup will occur.");
     }
     return $geo_data;
 }

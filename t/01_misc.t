@@ -12,18 +12,18 @@ use Path::Class::File;
 use FindBin;
 
 use lib "$FindBin::Bin/../lib";
-use InstaPlerd::TitleGenerator;
-use InstaPlerd::ExifHelper;
-use InstaPlerd::Util;
+use Tuvix::InstaPlugin::TitleGenerator;
+use Tuvix::InstaPlugin::ExifHelper;
+use Tuvix::InstaPlugin::Util;
 
 
 my $img = "$FindBin::Bin/source/betong_lion.jpg";
 
 my $img_file = Path::Class::File->new($img);
 
-my $eh = InstaPlerd::ExifHelper->new(source_file => $img_file);
-my $tg = InstaPlerd::TitleGenerator->new(exif_helper => $eh);
-my $util = InstaPlerd::Util->new();
+my $eh = Tuvix::InstaPlugin::ExifHelper->new(source_file => $img_file);
+my $tg = Tuvix::InstaPlugin::TitleGenerator->new(exif_helper => $eh);
+my $util = Tuvix::InstaPlugin::Util->new();
 
 my $meta = $util->load_image_meta($img);
 $eh->geo_data($$meta{location});
