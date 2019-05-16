@@ -1,9 +1,0 @@
-  extensions       => ['InstaPlerd::Post'],
-  extension_preferences => {
-      'InstaPlerd::Post'  => {
-          width       => 847,
-          height      => 840,
-          compression => 85,
-          filter      => 'InstaPlerd::Filters::Batman',
-    }
-  },
