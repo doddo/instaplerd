@@ -1,4 +1,4 @@
-package InstaPlerd;
+package Tuvix::InstaPlugin;
 use 5.008001;
 use strict;
 use warnings;
@@ -21,17 +21,17 @@ __END__
 
 =head1 NAME
 
-InstaPlerd - Extend Plerd with photoblog support
+Tuvix::InstaPlugin - Extend Tuvix (and maybe Plerd in the future) with photoblog support
 
 =head1 SYNOPSIS
 
-    use InstaPlerd::Post;
+    use Tuvix::InstaPlugin::Post;
 
 =head1 DESCRIPTION
 
-InstaPlerd is some sort of pluin for L<Plerd|https://github.com/jmacdotorg/plerd> which enables jpeg files as source files. It will apply some various filters and the like, crop, scale and make it into an Plerd::Post.
+This is some sort of pluin for L<Tuvix|https://github.com/doddo/tuvix> which enables jpeg files as source files. It will apply some various filters and the like, crop, scale and make it into an Plerd::Post.
 
-It does not currently work with Plerd because this is a work in progress.
+It does not currently work with Plerd because it does not have extension support yet,.
 
 
 =head1 LICENSE

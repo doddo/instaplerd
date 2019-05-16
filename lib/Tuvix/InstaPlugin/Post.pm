@@ -1,14 +1,16 @@
-package InstaPlerd::Post;
+package Tuvix::InstaPlugin::Post;
 
 use utf8;
 use strict;
 
-use InstaPlerd::ExifHelper;
-use InstaPlerd::TitleGenerator;
-use InstaPlerd::Util;
+use Tuvix::InstaPlugin::ExifHelper;
+use Tuvix::InstaPlugin::TitleGenerator;
+use Tuvix::InstaPlugin::Util;
 
 use Carp;
 use Plerd::Post;
+
+use Mojo::Log;
 
 use Path::Class::File;
 use DateTime::Format::Strptime;
@@ -54,7 +56,7 @@ around BUILDARGS => sub {
     }
     # load the default filter if none is specified ...
     unless (defined ${args}{'filter'}) {
-        load InstaPlerd::Filters::Artistic;
+        load Tuvix::InstaPlugin::Filters::Artistic;
     }
 
     my @args = %args;
@@ -65,6 +67,12 @@ has 'source_image' => (
     is      => 'rw',
     isa     => 'Maybe[Image::Magick]',
     default => sub {Image::Magick->new()},
+);
+
+has 'log' => (
+    is      => 'rw',
+    isa     => 'Mojo::Log',
+    default => sub { Mojo::Log->new() }
 );
 
 has 'width' => (
@@ -93,7 +101,7 @@ has 'instaplerd_template_file' => (
 
 has 'exif_helper' => (
     is  => 'rw',
-    isa => 'InstaPlerd::ExifHelper',
+    isa => 'Tuvix::InstaPlugin::ExifHelper',
 );
 
 has 'resize_source_picture' => (
@@ -117,20 +125,20 @@ has 'source_file' => (
 
 has 'filter' => (
     is         => 'rw',
-    isa        => 'InstaPlerd::Filter',
+    isa        => 'Tuvix::InstaPlugin::Filter',
     lazy_build => 1,
 );
 
 has 'util' => (
     is      => 'ro',
-    isa     => 'InstaPlerd::Util',
-    default => sub {InstaPlerd::Util->new()}
+    isa     => 'Tuvix::InstaPlugin::Util',
+    default => sub {Tuvix::InstaPlugin::Util->new()}
 
 );
 
 has 'title_generator' => (
     is  => 'rw',
-    isa => 'InstaPlerd::TitleGenerator',
+    isa => 'Tuvix::InstaPlugin::TitleGenerator',
 );
 
 sub BUILD {
@@ -162,8 +170,9 @@ sub _process_source_file {
     };
 
     $self->exif_helper(
-        InstaPlerd::ExifHelper->new(
+        Tuvix::InstaPlugin::ExifHelper->new(
             source_file => $self->source_file,
+            log         => $self->log
         ));
 
     if ($attributes{location} // 0){
@@ -171,7 +180,7 @@ sub _process_source_file {
     }
 
     $self->title_generator(
-        InstaPlerd::TitleGenerator->new(exif_helper => $self->exif_helper()));
+        Tuvix::InstaPlugin::TitleGenerator->new(exif_helper => $self->exif_helper()));
 
     $self->attributes(\%attributes);
 
@@ -230,15 +239,19 @@ sub _process_source_file {
         $self->exif_helper->geo_data($attributes{ location });
     }
     elsif ($self->do_geo_lookup) {
+        $self->log->info("Doing geo data lookup");
         if ($self->exif_helper->geo_data) {
             $attributes{ location } = $self->exif_helper->geo_data;
             $attributes_need_to_be_written_out = 1;
         }
     }
+    else {
+        $self->debug('skipping geo lookup: do_geo_lookup not enabled.');
+    }
 
     if ($attributes{ filter }) {
         # TODO
-        my $filter = 'InstaPlerd::Filters::' . $attributes{ filter };
+        my $filter = 'Tuvix::InstaPlugin::Filters::' . $attributes{ filter };
         load $filter;
         $self->filter($filter->new());
     }
@@ -359,7 +372,7 @@ sub _build_instaplerd_template_file {
 sub _build_filter {
     my $self = shift;
     my @available_filters = qw/Artistic ArtisticGrayscale Batman Nelville Pi/;
-    my $filter = sprintf 'InstaPlerd::Filters::%s', $available_filters[rand @available_filters];
+    my $filter = sprintf 'Tuvix::InstaPlugin::Filters::%s', $available_filters[rand @available_filters];
     load $filter;
     return $filter->new();
 

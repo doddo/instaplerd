@@ -1,4 +1,4 @@
-package InstaPlerd::Util;
+package Tuvix::InstaPlugin::Util;
 
 use strict;
 use warnings FATAL => 'all';

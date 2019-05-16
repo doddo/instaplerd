@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use feature qw/say/;
-use InstaPlerd::Util;
+use Tuvix::InstaPlugin::Util;
 use utf8;
 use v5.22;
 use Getopt::Long qw/GetOptions/;
@@ -13,7 +13,7 @@ my @deltags;
 my @settags;
 my %settags;
 my $list;
-my $util = InstaPlerd::Util->new;
+my $util = Tuvix::InstaPlugin::Util->new;
 my $clear = 0;
 my $jsondump = 0;
 my $help = 0;
