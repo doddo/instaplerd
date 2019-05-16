@@ -150,10 +150,24 @@ sub _build_geo_data {
 
         if ($lat_long && $lat_long ne 'NaN') {
             $geo_data = $self->_geo_coder->reverse_geocode(latlng => $lat_long);
+            if (defined $$geo_data{display_name}){
+                $self->log->info(
+                    sprintf "Got geo data [%s]", $$geo_data{display_name} // 'no display_name');
+            } else {
+                my $r = $self->_geo_coder->response();
+                if ($r->is_success){
+                    $self->log->error(
+                        sprintf "Unexpected response from geo data lookup [%.30s]", $r->decoded_content);
+                }
+                else {
+                    $self->log->error(
+                        sprintf "Error looking up geo data [%s]", $r->status_line);
+                }
+            }
+
             $$geo_data{latitude} ||= @{$lat_long_dd}[0];
             $$geo_data{longitude} ||= @{$lat_long_dd}[1];
-            $self->log->debug(
-                sprintf "Got geo data [%s]", $$geo_data{display_name} // 'no display_name');
+
         }
         else {
             $self->log->warn(
