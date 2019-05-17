@@ -25,6 +25,6 @@ COPY --chown=tuvix . /tmp/instaplerd
 WORKDIR /tmp/instaplerd 
 
 RUN cpanm  -M https://cpan.metacpan.org  --notest --installdeps .
-RUN cpanm install .
+RUN cpanm -v install .
 
 WORKDIR /opt/tuvix 
