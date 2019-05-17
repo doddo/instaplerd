@@ -39,6 +39,7 @@ WriteMakefile(
        'Image::Magick'          => '0',
        'Image::ExifTool'        => '0',
        'JSON'                   => '0',
+       'LWP::Protocol::https'   => '0',
        'Module::Load'           => '0',
        'Moose'                  => '0',
        'Plerd'                  => '0',

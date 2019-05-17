@@ -19,6 +19,7 @@ requires 'Software::License::MIT';
 requires 'Text::MultiMarkdown';
 requires 'Text::Sprintf::Named';
 requires 'Try::Tiny';
+requires 'LWP::Protocol::https';
 
 
 on 'test' => sub {
