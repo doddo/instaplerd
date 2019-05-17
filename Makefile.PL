@@ -4,7 +4,7 @@ use warnings;
 use ExtUtils::MakeMaker;
 use File::ShareDir::Install;
 
-install_share 'share';
+install_share module => 'Tuvix::InstaPlugin' => 'share';
 
 WriteMakefile(
     NAME             => 'Tuvix::InstaPlugin',
@@ -28,26 +28,26 @@ WriteMakefile(
         'Moose'                     => '0'
     },
     PREREQ_PM => {
-        'Moose'         => 0,
-           'Carp'   => '0',
-           'DateTime::Format::Strptime' => '0',
-           'Digest::MD5'               => '0',
-           'File::ShareDir'         => '0',
-           'File::Spec'             => '0',
-           'Geo::Coordinates::Transform'   => '0',
-           'Geo::Coder::OSM'        => '0',
-           'Image::Magick'          => '0',
-           'Image::ExifTool'        => '0',
-           'JSON'                   => '0',
-           'Module::Load'           => '0',
-           'Moose'                  => '0',
-           'Plerd'                  => '0',
-           'Pod::Usage'             => '0',
-           'Readonly'               => '0',
-           'Software::License::MIT' => '0',
-           'Text::MultiMarkdown'    => '0',
-           'Text::Sprintf::Named'   => '0',
-           'Try::Tiny'              => '0',
+       'Moose'         => 0,
+       'Carp'   => '0',
+       'DateTime::Format::Strptime' => '0',
+       'Digest::MD5'               => '0',
+       'File::ShareDir'         => '0',
+       'File::Spec'             => '0',
+       'Geo::Coordinates::Transform'   => '0',
+       'Geo::Coder::OSM'        => '0',
+       'Image::Magick'          => '0',
+       'Image::ExifTool'        => '0',
+       'JSON'                   => '0',
+       'Module::Load'           => '0',
+       'Moose'                  => '0',
+       'Plerd'                  => '0',
+       'Pod::Usage'             => '0',
+       'Readonly'               => '0',
+       'Software::License::MIT' => '0',
+       'Text::MultiMarkdown'    => '0',
+       'Text::Sprintf::Named'   => '0',
+       'Try::Tiny'              => '0',
 
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

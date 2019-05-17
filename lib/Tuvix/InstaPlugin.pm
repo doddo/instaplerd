@@ -5,14 +5,15 @@ use warnings;
 
 our $VERSION = "0.01";
 
-use File::ShareDir qw(dist_dir);
+use File::ShareDir qw(module_dir);
 use File::Which;
 
 use vars qw(@ISA @EXPORT $ASSET_DIR);
 
 @ISA = qw(Exporter);
 @EXPORT = qw($ASSET_DIR);
-$ASSET_DIR = dist_dir('InstaPlerd');
+
+$ASSET_DIR = module_dir('Tuvix::InstaPlugin');
 
 1;
 __END__
