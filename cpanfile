@@ -20,6 +20,9 @@ requires 'Text::MultiMarkdown';
 requires 'Text::Sprintf::Named';
 requires 'Try::Tiny';
 requires 'LWP::Protocol::https';
+requires 'MIME::Base64';
+requires 'Mojo::UserAgent';
+requires 'Mojo::Log';
 
 
 on 'test' => sub {

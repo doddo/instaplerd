@@ -6,6 +6,7 @@ use strict;
 use Tuvix::InstaPlugin::ExifHelper;
 use Tuvix::InstaPlugin::TitleGenerator;
 use Tuvix::InstaPlugin::Util;
+use Tuvix::InstaPlugin::ObjectDetector;
 
 use Carp;
 use Plerd::Post;
@@ -64,15 +65,15 @@ around BUILDARGS => sub {
 };
 
 has 'source_image' => (
-    is      => 'rw',
-    isa     => 'Maybe[Image::Magick]',
-    default => sub {Image::Magick->new()},
+    is         => 'rw',
+    isa        => 'Maybe[Image::Magick]',
+    lazy_build => 1,
 );
 
 has 'log' => (
     is      => 'rw',
     isa     => 'Mojo::Log',
-    default => sub { Mojo::Log->new() }
+    default => sub {Mojo::Log->new()}
 );
 
 has 'width' => (
@@ -141,10 +142,22 @@ has 'title_generator' => (
     isa => 'Tuvix::InstaPlugin::TitleGenerator',
 );
 
+has 'clarafai_api_key' => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 0
+);
+
+has '_dest_image' => (
+    is         => 'rw',
+    isa        => 'Maybe[Image::Magick]',
+    lazy_build => 1
+);
+
 sub BUILD {
     my $self = shift;
-    if (! -f $self->instaplerd_template_file) {
-        carp sprintf ("Can't load '%s'\n", $self->instaplerd_template_file);
+    if (!-f $self->instaplerd_template_file) {
+        carp sprintf("Can't load '%s'\n", $self->instaplerd_template_file);
     }
 };
 
@@ -156,7 +169,7 @@ sub _process_source_file {
     my $image_needs_to_be_published = 0;
     my $body;
 
-    my @ordered_attributes = qw(title time published_filename guid comment location checksum filter);
+    my @ordered_attributes = qw(title time published_filename guid comment location concepts checksum filter tags);
     try {
         my $source_meta = $self->util->load_image_meta($self->source_file->stringify);
 
@@ -165,7 +178,8 @@ sub _process_source_file {
         };
     }
     catch {
-        carp(sprintf("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
+        $self->log->info(
+            sprintf("No \"special\" comment data loaded from '%s':%s\n", $self->source_file, $&));
         $attributes_need_to_be_written_out = 1;
     };
 
@@ -175,12 +189,9 @@ sub _process_source_file {
             log         => $self->log
         ));
 
-    if ($attributes{location} // 0){
+    if ($attributes{location} // 0) {
         $self->exif_helper->geo_data($attributes{location});
     }
-
-    $self->title_generator(
-        Tuvix::InstaPlugin::TitleGenerator->new(exif_helper => $self->exif_helper()));
 
     $self->attributes(\%attributes);
 
@@ -193,13 +204,6 @@ sub _process_source_file {
         $self->guid($guid);
         $attributes_need_to_be_written_out = 1;
     }
-
-    if (!$attributes{'title'}) {
-        $attributes{'title'} = $self->title_generator->generate_title($self->source_file->basename);
-        $attributes_need_to_be_written_out = 1;
-
-    }
-    $self->title($attributes{ title });
 
     if ($attributes{ time }) {
         eval {
@@ -289,8 +293,8 @@ sub _process_source_file {
         }
     }
     else {
-        printf "checksum for '%s' not stored in META. Generating image usw.\n",
-            $self->source_file->basename;
+        $self->log->info(sprintf "checksum for '%s' not stored in META. This triggers image generation.",
+            $self->source_file->basename);
         $image_needs_to_be_published = 1;
         $attributes_need_to_be_written_out = 1;
     }
@@ -313,27 +317,50 @@ sub _process_source_file {
     ) || $self->plerd->_throw_template_exception($self->instaplerd_template_file);
     $self->body($body);
 
+    if (!$attributes{concepts}) {
+        # Do obj detection on the cropped image
+        if ($self->clarafai_api_key) {
+            $self->log->info('Attempting some object detection.');
+            my $object_detector = Tuvix::InstaPlugin::ObjectDetector->new(
+                clarafai_api_key => $self->clarafai_api_key,
+                image            => $self->_dest_image
+            );
+            $object_detector->process();
+
+            $attributes{'concepts'} = $object_detector->concepts;
+            if ($attributes{'concepts'}) {
+                $attributes_need_to_be_written_out = 1;
+            }
+            else {
+                $self->log->info("No concepts detected in the image.");
+            }
+        }
+    }
+
+    if ($attributes{concepts}){
+        # Todo maybe limit (here will be up to like 20 tags from concepts)
+        my @concepts =
+            sort { $attributes{concepts}{$a} <=> $attributes{concepts}{$b} }
+                keys %{$attributes{concepts}};
+
+        my @ten_concepts = map { $_ // () } @concepts[0..9];
+        $self->tags(\@ten_concepts);
+    }
+
+    if (!$attributes{'title'}) {
+        $self->title_generator(
+            Tuvix::InstaPlugin::TitleGenerator->new(
+                exif_helper => $self->exif_helper(),
+                concepts    => $attributes{concepts} // {}));
+        $attributes{'title'} = $self->title_generator->generate_title($self->source_file->basename);
+        $attributes_need_to_be_written_out = 1;
+
+    }
+    $self->title($attributes{ title });
+
     if ($image_needs_to_be_published) {
-        # this is expensive memory-wise
-        $self->source_image->read($self->source_file);
-        my $destination_image = $self->source_image->Clone();
 
-        # fix rotation if need be
-        $destination_image->AutoOrient();
-
-        my ($height, $width) = $self->source_image->Get('height', 'width');
-        $destination_image->Resize(
-            'gravity'  => 'Center',
-            'geometry' =>
-                $height / $self->height < $width / $self->width
-                    ? sprintf 'x%i', $self->height
-                    : sprintf '%ix', $self->width
-        );
-
-        $destination_image->Crop(
-            'gravity'  => 'Center',
-            'geometry' => sprintf("%ix%i", $self->width, $self->height),
-        );
+        my $destination_image = $self->_dest_image;
 
         # Here is where the magic happens
         mkpath(File::Spec->catdir(
@@ -358,7 +385,9 @@ sub _process_source_file {
         $self->util->save_image_meta(
             $self->source_file->stringify, \%attributes);
     }
+    # To save some memory.
     $self->source_image(undef);
+    $self->_dest_image(undef);
 }
 
 sub _build_instaplerd_template_file {
@@ -367,6 +396,38 @@ sub _build_instaplerd_template_file {
         $self->plerd->template_directory,
         'instaplerd_post_content.tt',
     );
+}
+
+sub _build__dest_image {
+    my $self = shift;
+
+    my $destination_image = $self->source_image->Clone();
+
+    # fix rotation if need be
+    $destination_image->AutoOrient();
+
+    my ($height, $width) = $self->source_image->Get('height', 'width');
+    $destination_image->Resize(
+        'gravity'  => 'Center',
+        'geometry' =>
+            $height / $self->height < $width / $self->width
+                ? sprintf 'x%i', $self->height
+                : sprintf '%ix', $self->width
+    );
+
+    $destination_image->Crop(
+        'gravity'  => 'Center',
+        'geometry' => sprintf("%ix%i", $self->width, $self->height),
+    );
+
+    return $destination_image;
+}
+
+sub _build_source_image {
+    my $self = shift;
+    my $source_image = Image::Magick->new();
+    $source_image->read($self->source_file);
+    return $source_image;
 }
 
 sub _build_filter {

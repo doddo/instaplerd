@@ -30,8 +30,13 @@ has 'title_template_list' => (
     isa     => 'ArrayRef[Str]',
     default => sub {
         return [
+            "%(concept)s %(time_of_day)s %(location_with_random_precision)s",
+            "%(concept)s %(time_of_day)s %(location_with_random_precision)s",
+            "%(concept)s %(season)s %(location_with_random_precision)s",
+            "%(concept)s %(season)s %(location_with_random_precision)s",
+            "%(concept)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
+
             "%(time_of_day)s %(location_with_random_precision)s",
-            "%(superlative)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
             "%(time_of_day)s %(location_with_random_precision)s",
             "%(season)s %(location_with_random_precision)s",
             "%(season)s %(location_with_random_precision)s",
@@ -39,29 +44,22 @@ has 'title_template_list' => (
         ]}
 );
 
-has 'superlative_list' => (
-    is      => 'rw',
-    isa     => 'ArrayRef[Str]',
-    default => sub {
-        return [
-            "A Great",
-            "A Wonderful",
-            "A Quite Decent",
-            "An OK",
-            "The Best",
-        ]}
+has 'concepts' => (
+    is => 'ro',
+    isa=> 'HashRef[Str]',
+    default => sub { {} },
 );
 
-sub interesting_fact {
-    # TODO WIP
+sub get_weighted_concept {
     my $self = shift;
-    my @interesting_facts;
+    my @concepts =
+        sort { $self->concepts->{$a} <=> $self->concepts->{$b} }
+            keys %{$self->concepts};
 
-    if (${$self->exif_helper->geo_data()}{ GPSAltitude }) {
-        if (${$self->exif_helper->geo_data()}{ GPSAltitude } =~ /^[^0]/) {
-            push @interesting_facts, ${$self->exif_helper->geo_data()}{ GPSAltitude };
-        }
-    }
+    my $i = rand @concepts;
+    my $j = rand @concepts;
+
+    return $concepts[ $i > $j ? $i : $j]
 }
 
 sub location_with_random_precision {
@@ -119,11 +117,11 @@ sub fmt_hash {
         $location = join(" ", @{$self->location_with_random_precision()})
     }
 
-    # TODO: fix this
+        # TODO: fix this
     return(
-        superlative                    => ${$self->superlative_list()}[ rand @{$self->superlative_list()}],
-        time_of_day                    => $self->_capitalise($self->time_of_day) || '',
-        location_with_random_precision => $location || '',
+        concept                        => $self->get_weighted_concept =~ s/(?<=\b)(.)/\u$1/r || '',
+        time_of_day                    => $self->_capitalise($self->time_of_day) || 'Unknown Time Of Day',
+        location_with_random_precision => $location || 'Unknown Location',
         season                         => $self->_capitalise($self->season || '')
     );
 }
@@ -219,6 +217,8 @@ sub _make_great_title {
 
     my $title = $formatter->format({ args => \%fmt_hash });
     chomp($title);
+    $title =~ s/^\s+|\s+$//g;
+
     return $title;
 }
 
