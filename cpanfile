@@ -24,7 +24,6 @@ requires 'MIME::Base64';
 requires 'Mojo::UserAgent';
 requires 'Mojo::Log';
 
-
 on 'test' => sub {
     requires 'Test::More', '0.98';
 };

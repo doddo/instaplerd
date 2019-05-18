@@ -27,6 +27,7 @@ WriteMakefile(
         'File::ShareDir::Install' => '0',
         'Moose'                   => '0'
     },
+
     PREREQ_PM          => {
         'Moose'                       => 0,
         'Carp'                        => '0',
@@ -51,7 +52,6 @@ WriteMakefile(
         'Text::MultiMarkdown'         => '0',
         'Text::Sprintf::Named'        => '0',
         'Try::Tiny'                   => '0',
-
     },
     dist               => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean              => { FILES => 'Tuvix::InstaPlugin-*' },
