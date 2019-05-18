@@ -340,7 +340,7 @@ sub _process_source_file {
     if ($attributes{concepts}){
         # Todo maybe limit (here will be up to like 20 tags from concepts)
         my @concepts =
-            sort { $attributes{concepts}{$a} <=> $attributes{concepts}{$b} }
+            sort { $attributes{concepts}{$b} <=> $attributes{concepts}{$a} }
                 keys %{$attributes{concepts}};
 
         my @ten_concepts = map { $_ // () } @concepts[0..9];

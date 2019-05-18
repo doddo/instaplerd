@@ -53,13 +53,13 @@ has 'concepts' => (
 sub get_weighted_concept {
     my $self = shift;
     my @concepts =
-        sort { $self->concepts->{$a} <=> $self->concepts->{$b} }
+        sort { $self->concepts->{$b} <=> $self->concepts->{$a} }
             keys %{$self->concepts};
 
     my $i = rand @concepts;
     my $j = rand @concepts;
 
-    return $concepts[ $i > $j ? $i : $j]
+    return $concepts[ $i < $j ? $i : $j]
 }
 
 sub location_with_random_precision {
