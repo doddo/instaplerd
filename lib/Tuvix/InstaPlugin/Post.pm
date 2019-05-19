@@ -183,17 +183,58 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     };
 
+    $self->attributes(\%attributes);
+
     $self->exif_helper(
         Tuvix::InstaPlugin::ExifHelper->new(
             source_file => $self->source_file,
             log         => $self->log
         ));
 
+    if (!$attributes{concepts}) {
+        # Do obj detection on the cropped image
+        if ($self->clarafai_api_key) {
+            $self->log->info('Attempting some object detection.');
+            my $object_detector = Tuvix::InstaPlugin::ObjectDetector->new(
+                clarafai_api_key => $self->clarafai_api_key,
+                image            => $self->_dest_image
+            );
+            $object_detector->process();
+
+            $attributes{'concepts'} = $object_detector->concepts;
+            if ($attributes{'concepts'}) {
+                $attributes_need_to_be_written_out = 1;
+            }
+            else {
+                $self->log->info("No concepts detected in the image.");
+            }
+        }
+    }
+
+    if ($attributes{concepts}) {
+        # Todo maybe limit (here will be up to like 20 tags from concepts)
+        my @concepts =
+            sort {$attributes{concepts}{$b} <=> $attributes{concepts}{$a}}
+                keys %{$attributes{concepts}};
+
+        my @ten_concepts = map {$_ // ()} @concepts[0 .. 9];
+        $self->tags(\@ten_concepts);
+    }
+
+    if (!$attributes{'title'}) {
+        $self->title_generator(
+            Tuvix::InstaPlugin::TitleGenerator->new(
+                exif_helper => $self->exif_helper(),
+                concepts    => $attributes{concepts} // {}));
+        $attributes{'title'} = $self->title_generator->generate_title($self->source_file->basename);
+        $attributes_need_to_be_written_out = 1;
+
+    }
+    $self->title($attributes{ title });
+
     if ($attributes{location} // 0) {
         $self->exif_helper->geo_data($attributes{location});
     }
-
-    $self->attributes(\%attributes);
 
     if ($attributes{ 'guid' }) {
         $self->guid(Data::GUID->from_string($attributes{ 'guid' }));
@@ -316,47 +357,6 @@ sub _process_source_file {
         \$body,
     ) || $self->plerd->_throw_template_exception($self->instaplerd_template_file);
     $self->body($body);
-
-    if (!$attributes{concepts}) {
-        # Do obj detection on the cropped image
-        if ($self->clarafai_api_key) {
-            $self->log->info('Attempting some object detection.');
-            my $object_detector = Tuvix::InstaPlugin::ObjectDetector->new(
-                clarafai_api_key => $self->clarafai_api_key,
-                image            => $self->_dest_image
-            );
-            $object_detector->process();
-
-            $attributes{'concepts'} = $object_detector->concepts;
-            if ($attributes{'concepts'}) {
-                $attributes_need_to_be_written_out = 1;
-            }
-            else {
-                $self->log->info("No concepts detected in the image.");
-            }
-        }
-    }
-
-    if ($attributes{concepts}){
-        # Todo maybe limit (here will be up to like 20 tags from concepts)
-        my @concepts =
-            sort { $attributes{concepts}{$b} <=> $attributes{concepts}{$a} }
-                keys %{$attributes{concepts}};
-
-        my @ten_concepts = map { $_ // () } @concepts[0..9];
-        $self->tags(\@ten_concepts);
-    }
-
-    if (!$attributes{'title'}) {
-        $self->title_generator(
-            Tuvix::InstaPlugin::TitleGenerator->new(
-                exif_helper => $self->exif_helper(),
-                concepts    => $attributes{concepts} // {}));
-        $attributes{'title'} = $self->title_generator->generate_title($self->source_file->basename);
-        $attributes_need_to_be_written_out = 1;
-
-    }
-    $self->title($attributes{ title });
 
     if ($image_needs_to_be_published) {
 
