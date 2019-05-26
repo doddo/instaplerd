@@ -1,5 +1,5 @@
 <div class="instapost">
-    <div class="instapost" style="max-width:[% width %]px; max-height:[% heigth %]px;" >
+    <div class="instapost" style="max-width:[% width %]px; max-height:[% height %]px;" >
         <img class="instapost"  style="width:100%;" src="[% uri %]"/>
     </div>
     <p class="camerainfo">Snapped[% IF exif.Model %] with [% exif.Make %] [% exif.Model %] [% END %]
