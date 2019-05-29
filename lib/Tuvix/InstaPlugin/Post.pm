@@ -231,16 +231,19 @@ sub _process_source_file {
                     $self->concept_to_tag_treshold, $concept, $attributes{concepts}{$concept});
                 last;
             }
-            elsif (scalar @tag_concepts > 9) {
+            elsif (scalar @{$self->tag_objects} > 9) {
                 $self->log->debug("Found top ten concepts. Stopping.");
                 last;
             }
-            push(@tag_concepts, $concept);
+            # New Plerd 1.811, now tags are like this:
+            my $tag = $self->plerd->tag_named($concept);
+            $tag->add_post($self);
+            push @{$self->tag_objects}, $tag;
+
         }
 
-        if (@tag_concepts) {
-            $self->log->info(sprintf 'Setting the following tags: [%s]', join(", ", @tag_concepts));
-            $self->tags(\@tag_concepts);
+        if ($self->tags()) {
+            $self->log->info(sprintf 'Setting the following tags: [%s]', join(", ", $self->tags()));
         }
         else {
             $self->log->info('No concepts good enough to make tags from found.');
