@@ -218,6 +218,9 @@ sub _process_source_file {
                 keys %{$attributes{concepts}};
 
         my @ten_concepts = map {$_ // ()} @concepts[0 .. 9];
+
+        $self->log->info(sprintf 'Setting the following tags: [%s]', join(", ", @ten_concepts));
+
         $self->tags(\@ten_concepts);
     }
 
