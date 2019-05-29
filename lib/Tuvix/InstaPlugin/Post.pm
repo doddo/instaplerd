@@ -148,6 +148,12 @@ has 'clarafai_api_key' => (
     required => 0
 );
 
+has 'concept_to_tag_treshold' => (
+    is      => 'ro',
+    isa     => 'Num',
+    default => 0.95
+);
+
 has '_dest_image' => (
     is         => 'rw',
     isa        => 'Maybe[Image::Magick]',
@@ -217,11 +223,31 @@ sub _process_source_file {
             sort {$attributes{concepts}{$b} <=> $attributes{concepts}{$a}}
                 keys %{$attributes{concepts}};
 
-        my @ten_concepts = map {$_ // ()} @concepts[0 .. 9];
+        my @tag_concepts;
 
-        $self->log->info(sprintf 'Setting the following tags: [%s]', join(", ", @ten_concepts));
+        foreach my $concept (@concepts) {
+            if ($attributes{concepts}{$concept} <= $self->concept_to_tag_treshold) {
+                $self->log->debug(sprintf "No more concepts above treshold of %s. Skipping %s with %s",
+                    $self->concept_to_tag_treshold, $concept, $attributes{concepts}{$concept});
+                last;
+            }
+            elsif (scalar @tag_concepts > 9) {
+                $self->log->debug("Found top ten concepts. Stopping.");
+                last;
+            }
+            push(@tag_concepts, $concept);
+        }
 
-        $self->tags(\@ten_concepts);
+        if (@tag_concepts) {
+            $self->log->info(sprintf 'Setting the following tags: [%s]', join(", ", @tag_concepts));
+            $self->tags(\@tag_concepts);
+        }
+        else {
+            $self->log->info('No concepts good enough to make tags from found.');
+        }
+    }
+    else {
+        $self->log->info('No concepts found -- not setting tags from them.');
     }
 
     if (!$attributes{'title'}) {
