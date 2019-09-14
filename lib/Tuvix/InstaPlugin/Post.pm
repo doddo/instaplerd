@@ -432,25 +432,48 @@ sub _build_instaplerd_template_file {
 
 sub _build__dest_image {
     my $self = shift;
+    my $status;
 
     my $destination_image = $self->source_image->Clone();
 
     # fix rotation if need be
     $destination_image->AutoOrient();
 
-    my ($height, $width) = $self->source_image->Get('height', 'width');
-    $destination_image->Resize(
-        'gravity'  => 'Center',
-        'geometry' =>
-            $height / $self->height < $width / $self->width
-                ? sprintf 'x%i', $self->height
-                : sprintf '%ix', $self->width
+    my ($width, $height) = $self->source_image->Get('width', 'height');
+
+    my $desired_resize = $height / $self->height > $width / $self->width
+        ? sprintf 'x%i', $self->height
+        : sprintf '%ix', $self->width;
+
+    my $desired_geometry = sprintf("%ix%i", $self->width, $self->height);
+
+    $self->log->info(
+        sprintf "Image dimensions are %ix%i. Setting desired geometry %s before cropping to %s.",
+            $height, $width, $desired_resize, $desired_geometry);
+
+    $status = $destination_image->Resize(
+        'geometry' => $desired_resize
     );
 
-    $destination_image->Crop(
+    my ($nwidth, $nheight) = $destination_image->Get('width', 'height');
+    $self->log->info(
+        sprintf "Image dimensions after resize are now %ix%i.",
+            $nwidth, $nheight);
+
+    $self->log->warn("$status") if $status;
+
+    $status = $destination_image->Crop(
         'gravity'  => 'Center',
-        'geometry' => sprintf("%ix%i", $self->width, $self->height),
+        'geometry' => $desired_geometry
     );
+
+    $self->log->warn("$status") if $status;
+
+    ($nwidth, $nheight) = $destination_image->Get('width', 'height');
+
+    $self->log->info(
+        sprintf "Image dimensions after crop and resize are now %ix%i.",
+            $nwidth, $nheight);
 
     return $destination_image;
 }
