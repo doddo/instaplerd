@@ -418,8 +418,8 @@ sub _process_source_file {
             $self->source_file->stringify, \%attributes);
     }
     # To save some memory.
-    #$self->source_image(undef);
-    #$self->_dest_image(undef);
+    $self->source_image(undef);
+    $self->_dest_image(undef);
 }
 
 sub _build_instaplerd_template_file {

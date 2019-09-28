@@ -40,6 +40,7 @@ has 'time_of_day' => (
 has 'title_template_list' => (
     is      => 'rw',
     isa     => 'ArrayRef[Str]',
+    # TODO: these titles are bad
     default => sub {
         return [
             "%(concept)s %(time_of_day)s %(location_with_random_precision)s",
@@ -47,12 +48,12 @@ has 'title_template_list' => (
             "%(concept)s %(season)s %(location_with_random_precision)s",
             "%(concept)s %(season)s %(location_with_random_precision)s",
             "%(concept)s %(season)s %(time_of_day)s %(location_with_random_precision)s",
-
             "%(time_of_day)s %(location_with_random_precision)s",
             "%(time_of_day)s %(location_with_random_precision)s",
             "%(season)s %(location_with_random_precision)s",
             "%(season)s %(location_with_random_precision)s",
             "%(season)s %(time_of_day)s %(location_with_random_precision)s",
+            "%(location_with_random_precision)s",
         ]}
 );
 

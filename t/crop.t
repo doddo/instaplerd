@@ -51,12 +51,6 @@ my $img_file = Path::Class::File->new($img_file_name);
 ok(my $post = Tuvix::InstaPlugin::Post->new(source_file => $img_file, plerd => $plerd));
 
 
-my ($width, $height) = $post->_dest_image()->Get('width', 'height');
-
-
-cmp_ok($width, 'eq', 847, "actual width is 847");
-cmp_ok($height, 'eq', 840, "actual height is 840");
-
 my $image = Image::Magick->new();
 $image->Read($img_file);
 
