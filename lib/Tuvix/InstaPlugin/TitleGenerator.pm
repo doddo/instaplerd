@@ -19,6 +19,18 @@ has 'season' => (
     lazy_build => 1
 );
 
+has 'default_file_names_regexes' => (
+    is  => 'rw',
+    isa => 'ArrayRef[Regexp]',
+    default => sub {
+        return [ map {qr/$_/i } (
+            '^(?:[\d]{4,}|(?:img|dscf?|p|dcf)_?\d{3,})',
+            '^received_\d++\.jpe?g',
+            '^(?:F|Ph)oto[\s_]+[\d,.\s]+.jpe?g'
+        ) ];
+    }
+);
+
 has 'time_of_day' => (
     is         => 'rw',
     isa        => 'Maybe[Str]',
@@ -130,9 +142,10 @@ sub generate_title {
     my $self = shift;
     my $filename = shift;
 
-    if ($filename =~ m/^(?:\d]{4,}|(?:img|dscf?|p|dcf)_?\d{3,})/i) {
-        # Here is the camera default crap name, make a great one instead.
-        return $self->_make_great_title || "An untitled picture";
+    for my $default_file_regex (@{$self->default_file_names_regexes}){
+        if ($filename =~ $default_file_regex){
+            return $self->_make_great_title || "An untitled picture";
+        }
     }
     return $self->_capitalise($filename);
 }
