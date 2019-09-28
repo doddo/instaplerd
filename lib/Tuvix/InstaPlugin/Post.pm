@@ -430,6 +430,54 @@ sub _build_instaplerd_template_file {
     );
 }
 
+sub _resize_image {
+    my $self = shift;
+    my $image_to_resize = shift;
+    my $desired_width = shift || $self->width;
+    my $desired_height = shift || $self->height;
+
+    my ($width, $height) = $image_to_resize->Get('width', 'height');
+    my $desired_resize = $desired_height / $height > $desired_width / $width
+        ? sprintf 'x%i', $desired_height
+        : sprintf '%ix', $desired_width;
+
+    my $status = $image_to_resize->Resize(
+        'geometry' => $desired_resize
+    );
+
+    $self->log->info(
+        sprintf "Resized image from [%sx%s] to %s [%sx%s]",
+            $width, $height, $desired_resize, $image_to_resize->Get("height"), $image_to_resize->Get("width"));
+
+    if ($status){
+        $self->log->warn("unable to resize image to $desired_resize: $status");
+    }
+
+    return $image_to_resize;
+}
+
+sub _crop_image {
+    my $self = shift;
+    my $image_to_crop = shift;
+    my $desired_width = shift || $self->width;
+    my $desired_height = shift || $self->height;
+
+
+    my $desired_geometry = sprintf ("%sx%s", $desired_width, $desired_height);
+    $self->log->info(
+        sprintf "Cropping to %s.", $desired_geometry);
+
+
+    my $status = $image_to_crop->Crop(
+        'gravity'  => 'Center',
+        'geometry' => $desired_geometry
+    );
+
+    $self->log->warn("Error cropping image to $desired_geometry: $status") if $status;
+
+    return $image_to_crop;
+}
+
 sub _build__dest_image {
     my $self = shift;
     my $status;
@@ -439,35 +487,14 @@ sub _build__dest_image {
     # fix rotation if need be
     $destination_image->AutoOrient();
 
-    my ($width, $height) = $self->source_image->Get('width', 'height');
-
-    my $desired_resize = $height / $self->height > $width / $self->width
-        ? sprintf 'x%i', $self->height
-        : sprintf '%ix', $self->width;
-
-    my $desired_geometry = sprintf("%ix%i", $self->width, $self->height);
-
-    $self->log->info(
-        sprintf "Image dimensions are %ix%i. Setting desired geometry %s before cropping to %s.",
-            $height, $width, $desired_resize, $desired_geometry);
-
-    $status = $destination_image->Resize(
-        'geometry' => $desired_resize
-    );
+    $self->_resize_image($destination_image);
 
     my ($nwidth, $nheight) = $destination_image->Get('width', 'height');
     $self->log->info(
         sprintf "Image dimensions after resize are now %ix%i.",
             $nwidth, $nheight);
 
-    $self->log->warn("$status") if $status;
-
-    $status = $destination_image->Crop(
-        'gravity'  => 'Center',
-        'geometry' => $desired_geometry
-    );
-
-    $self->log->warn("$status") if $status;
+    $self->_crop_image($destination_image);
 
     ($nwidth, $nheight) = $destination_image->Get('width', 'height');
 
