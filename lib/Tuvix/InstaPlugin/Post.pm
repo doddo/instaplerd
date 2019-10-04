@@ -348,7 +348,7 @@ sub _process_source_file {
         $self->image_alt($self->plerd->image_alt || '');
     }
 
-    my $published_filename_jpg = $attributes{ published_filename };
+    my $published_filename_jpg = sprintf("%s-%s", $attributes{ 'guid' }, $attributes{ published_filename });
     $published_filename_jpg =~ s/\.html?$/.jpeg/i;
 
     my $target_jpg_file_path = File::Spec->catfile(
