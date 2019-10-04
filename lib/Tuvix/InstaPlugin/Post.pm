@@ -514,7 +514,7 @@ sub _build_source_image {
 
 sub _build_filter {
     my $self = shift;
-    my @available_filters = qw/Artistic ArtisticGrayscale Batman Nelville Pi/;
+    my @available_filters = qw/Artistic ArtisticGrayscale Batman Nelville Nofilter Pi/;
     my $filter = sprintf 'Tuvix::InstaPlugin::Filters::%s', $available_filters[rand @available_filters];
     load $filter;
     return $filter->new();
