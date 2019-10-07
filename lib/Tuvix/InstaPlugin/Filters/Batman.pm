@@ -37,10 +37,4 @@ sub _apply {
     return $source_image;
 }
 
-sub _build_restrictions {
-    return(
-        brightness => qw/LightValue > 0.8/
-    );
-}
-
 1;

@@ -7,12 +7,6 @@ use Tuvix::InstaPlugin qw/$ASSET_DIR/;
 
 use Moose;
 
-has restrictions => (
-    is         => 'ro',
-    isa        => 'HashRef[Array]',
-    lazy_build => 1
-);
-
 has _frame => (
     is         => 'ro',
     isa        => 'Maybe[Image::Magick]',
@@ -26,17 +20,28 @@ has name => (
 );
 
 sub apply {
-    my $self = shift;
-    my $image = shift;
-    return $self->_apply($image);
+    return shift->_apply(shift);
 }
 
 sub _apply {
     my $self = shift;
     my $image = shift;
-
 }
 
+sub add_border {
+    my $self = shift;
+    my $image = shift;
+    my $color = shift || 'black';
+    my $width ||= int($image->Get('width') * 0.05);
+    my $height ||= $width;
+
+    my $geometry = sprintf('%s:%s', $width, $height);
+
+    $image->Shave(geometry => $geometry);
+    $image->Border(geometry => $geometry, color => $color);
+
+    return $image;
+}
 
 sub add_frame {
     my $self = shift;
@@ -63,10 +68,6 @@ sub _build_name {
 
     (my $name) = $self->meta->name =~ /::([A-Z][a-z0-9A-Z]+)$/;
     return $name;
-}
-
-sub _build_restrictions {
-    return {};
 }
 
 sub _build__frame {
