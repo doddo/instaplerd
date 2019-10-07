@@ -514,7 +514,21 @@ sub _build_source_image {
 
 sub _build_filter {
     my $self = shift;
-    my @available_filters = qw/Artistic ArtisticGrayscale Batman Nelville Nofilter Pi/;
+    # TODO fix this (add filter loader or something)
+    my @available_filters = qw/
+        Artistic
+        ArtisticGrayscale
+        Batman
+        Nelville
+        Nofilter
+        Pi
+        InstaGraph::Gotham
+        InstaGraph::Kelvin
+        InstaGraph::Lomo
+        InstaGraph::Nashville
+        InstaGraph::TiltShift
+        InstaGraph::Toaster
+    /;
     my $filter = sprintf 'Tuvix::InstaPlugin::Filters::%s', $available_filters[rand @available_filters];
     load $filter;
     return $filter->new();

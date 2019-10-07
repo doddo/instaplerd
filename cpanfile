@@ -23,6 +23,11 @@ requires 'LWP::Protocol::https';
 requires 'MIME::Base64';
 requires 'Mojo::UserAgent';
 requires 'Mojo::Log';
+requires 'Text::ParseWords';
+requires 'File::Temp';
+requires 'IPC::Run';
+requires 'POSIX';
+
 
 on 'test' => sub {
     requires 'Test::More', '0.98';
