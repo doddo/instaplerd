@@ -16,7 +16,7 @@ around '_apply' => sub {
 
     $source_image->Set(type => 'grayscale');
 
-    return self->$orig($source_image);
+    return $self->$orig($source_image);
 };
 
 1;
