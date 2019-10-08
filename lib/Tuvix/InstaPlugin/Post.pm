@@ -519,7 +519,6 @@ sub _build_filter {
         Artistic
         ArtisticGrayscale
         Batman
-        Nelville
         Nofilter
         Pi
         InstaGraph::Gotham
