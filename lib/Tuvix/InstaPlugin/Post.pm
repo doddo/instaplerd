@@ -4,13 +4,13 @@ use utf8;
 use strict;
 
 use Tuvix::InstaPlugin::ExifHelper;
+use Tuvix::InstaPlugin::FilterLoader;
 use Tuvix::InstaPlugin::TitleGenerator;
 use Tuvix::InstaPlugin::Util;
 use Tuvix::InstaPlugin::ObjectDetector;
 
 use Carp;
 use Plerd::Post;
-
 use Mojo::Log;
 
 use Path::Class::File;
@@ -40,13 +40,18 @@ around BUILDARGS => sub {
     my $class = shift;
     my %args = @_;
 
+    my $filter;
+    my $filter_loader;
+
     # Inject preferences from the global plerd config
     if ($args{plerd}{ extension_preferences }{ $class }) {
         my $plugin_prefs = $args{plerd}->{ extension_preferences }{ $class };
-        foreach my $key (%{$plugin_prefs}) {
+        foreach my $key (keys %{$plugin_prefs}) {
+
             if ($key eq 'filter' && !defined $args{ filter }) {
-                load $$plugin_prefs{ $key };
-                $args{$key} = $$plugin_prefs{ $key }->new();
+                $filter  = $$plugin_prefs{ $key };
+            } elsif ($key eq 'filter_loader'){
+                $filter_loader = $$plugin_prefs{ $key };
             }
             else {
                 # Preferences already set when creating object take precedence over
@@ -55,10 +60,8 @@ around BUILDARGS => sub {
             }
         }
     }
-    # load the default filter if none is specified ...
-    unless (defined ${args}{'filter'}) {
-        load Tuvix::InstaPlugin::Filters::Artistic;
-    }
+    $args{filter_loader} = Tuvix::InstaPlugin::FilterLoader->new($filter_loader);
+    $args{filter_loader}->filter($filter) if $filter;
 
     my @args = %args;
     return $class->$orig(@args);
@@ -115,6 +118,12 @@ has 'do_geo_lookup' => (
     is      => 'rw',
     isa     => 'Bool',
     default => 1
+);
+
+has 'filter_loader' => (
+    is       => 'rw',
+    isa      => 'Tuvix::InstaPlugin::FilterLoader',
+    required => 1
 );
 
 has 'source_file' => (
@@ -327,10 +336,7 @@ sub _process_source_file {
     }
 
     if ($attributes{ filter }) {
-        # TODO
-        my $filter = 'Tuvix::InstaPlugin::Filters::' . $attributes{ filter };
-        load $filter;
-        $self->filter($filter->new());
+        $self->filter_loader($attributes{ filter })
     }
     else {
         $attributes_need_to_be_written_out = 1;
@@ -513,25 +519,7 @@ sub _build_source_image {
 }
 
 sub _build_filter {
-    my $self = shift;
-    # TODO fix this (add filter loader or something)
-    my @available_filters = qw/
-        Artistic
-        ArtisticGrayscale
-        Batman
-        Nofilter
-        Pi
-        InstaGraph::Gotham
-        InstaGraph::Kelvin
-        InstaGraph::Lomo
-        InstaGraph::Nashville
-        InstaGraph::TiltShift
-        InstaGraph::Toaster
-    /;
-    my $filter = sprintf 'Tuvix::InstaPlugin::Filters::%s', $available_filters[rand @available_filters];
-    load $filter;
-    return $filter->new();
-
+    return shift->filter_loader->filter();
 }
 
 1;

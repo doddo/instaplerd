@@ -66,7 +66,7 @@ sub add_frame {
 sub _build_name {
     my $self = shift;
 
-    (my $name) = $self->meta->name =~ /::([A-Z][a-z0-9A-Z]+)$/;
+    (my $name) = $self->meta->name =~ /::((?:InstaGraph::)?[A-Z][a-z0-9A-Z]+)$/;
     return $name;
 }
 
