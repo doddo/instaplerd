@@ -131,7 +131,7 @@ sub _load_tmp_file {
 
 sub DEMOLISH {
     my $self = shift;
-    unlink $self->_tmp_file if (-f $self->_tmp_file);
+    unlink $self->_tmp_file if (defined $self->_tmp_file && -f $self->_tmp_file);
 }
 
 =pod
