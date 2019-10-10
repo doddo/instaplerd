@@ -336,7 +336,7 @@ sub _process_source_file {
     }
 
     if ($attributes{ filter }) {
-        $self->filter_loader($attributes{ filter })
+        $self->filter_loader->filter($attributes{ filter })
     }
     else {
         $attributes_need_to_be_written_out = 1;
