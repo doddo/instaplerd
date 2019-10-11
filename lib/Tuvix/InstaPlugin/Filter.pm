@@ -13,6 +13,18 @@ has _frame => (
     lazy_build => 1
 );
 
+has width => (
+    is      => 'rw',
+    isa     => 'Int',
+    required => 0,
+);
+
+has height => (
+    is      => 'rw',
+    isa     => 'Int',
+    required => 0,
+);
+
 has name => (
     is         => 'ro',
     isa        => 'Str',
@@ -20,7 +32,15 @@ has name => (
 );
 
 sub apply {
-    return shift->_apply(shift);
+    my $self = shift;
+    my $source_image = shift;
+
+    my ($width, $height) = $source_image->Get('width', 'height');
+
+    $self->width($width);
+    $self->height($height);
+
+    return $self->_apply($source_image);
 }
 
 sub _apply {

@@ -31,8 +31,7 @@ sub _apply {
     $source_image->Contrast(sharpen => 'true');
     $source_image->Contrast(sharpen => 'true');
 
-    $source_image->Shave(geometry => '20x20');
-    $source_image->Border(geometry => '20x20', color => 'black');
+    $self->add_border($source_image);
 
     return $source_image;
 }
