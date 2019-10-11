@@ -18,18 +18,23 @@ extends "Tuvix::InstaPlugin::Filter";
 around 'apply' => sub {
     my $orig = shift;
     my $self = shift;
-    my $image = shift;
+    my $source_image = shift;
 
+    my ($width, $height) = $source_image->Get('width', 'height');
+
+    $self->width($width);
+    $self->height($height);
     my ($fh, $filename) = tempfile();
     binmode $fh;
-    print $fh $image->ImageToBlob();
+    print $fh $source_image->ImageToBlob();
     close($fh);
 
     $self->log->info("Applying filter: " . $self->meta->name);
 
     $self->_tmp_file($filename);
 
-    return $self->_apply($image);
+
+    return $self->_apply($source_image);
 
 };
 

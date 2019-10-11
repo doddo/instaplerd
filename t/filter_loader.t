@@ -16,6 +16,12 @@ isa_ok($filter, 'Tuvix::InstaPlugin::Filter');
 
 ok(my $artistic_filter = $filter_loader->filter('NONEXISTANT FILTER'), 'can call nonexistent filter');
 
+
+for my $available_filter (@{$filter_loader->available_filters}){
+    $filter_loader->filter($available_filter);
+    isa_ok($filter_loader->filter(), $available_filter);
+}
+
 isa_ok($artistic_filter, 'Tuvix::InstaPlugin::Filters::Artistic');
 
 done_testing();
