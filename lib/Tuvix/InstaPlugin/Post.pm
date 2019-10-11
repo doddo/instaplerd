@@ -60,7 +60,7 @@ around BUILDARGS => sub {
             }
         }
     }
-    $args{filter_loader} = Tuvix::InstaPlugin::FilterLoader->new($filter_loader);
+    $args{filter_loader} = Tuvix::InstaPlugin::FilterLoader->new($filter_loader || {});
     $args{filter_loader}->filter($filter) if $filter;
 
     my @args = %args;
