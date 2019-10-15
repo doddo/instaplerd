@@ -81,7 +81,8 @@ sub do_stuff {
         my $filter = "Tuvix::InstaPlugin::Filters::${f}"->new();
 
         my $dst_image = $filter->apply($image->Clone());
-        my $img_filename = sprintf "%s_%sx%s_%s", $f, $height, $width, $file->basename;
+        my $img_filename = sprintf "%s_%sx%s_%s", $f, $height, $width,
+            $file->basename =~ s/\.\Kjpe?g/lc($dst_image->Get('magick'))/ier;
         $dst_image->write(File::Spec->catfile($output_dir, $img_dir, $img_filename));
         push @generated_objects, $img_filename;
     }

@@ -12,10 +12,10 @@ sub _apply {
 
     my $angle = rand(6) - 3;
 
+    $source_image->Set(magick => 'PNG');
+#    $source_image->Set( alpha=>'on' );
     # TODO: add caption=
     $source_image->Polaroid(angle=>$angle, gravity=>'center', background=>'gray');
-    # TODO: remove when introducing png support !!
-    $source_image->Set(background=>'white', alpha=>'remove', alpha=>'off' );
 
     $source_image->Resize(width=>$self->width, height => $self->height);
 

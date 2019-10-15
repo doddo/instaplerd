@@ -49,8 +49,9 @@ around BUILDARGS => sub {
         foreach my $key (keys %{$plugin_prefs}) {
 
             if ($key eq 'filter' && !defined $args{ filter }) {
-                $filter  = $$plugin_prefs{ $key };
-            } elsif ($key eq 'filter_loader'){
+                $filter = $$plugin_prefs{ $key };
+            }
+            elsif ($key eq 'filter_loader') {
                 $filter_loader = $$plugin_prefs{ $key };
             }
             else {
@@ -169,6 +170,18 @@ has '_dest_image' => (
     lazy_build => 1
 );
 
+has '_filtered_image' => (
+    is         => 'rw',
+    isa        => 'Maybe[Image::Magick]',
+    lazy_build => 1
+);
+
+has 'published_image_filename' => (
+    is         => 'rw',
+    isa        => 'Str',
+    lazy_build => 1
+);
+
 sub BUILD {
     my $self = shift;
     if (!-f $self->instaplerd_template_file) {
@@ -184,7 +197,8 @@ sub _process_source_file {
     my $image_needs_to_be_published = 0;
     my $body;
 
-    my @ordered_attributes = qw(title time published_filename guid comment location concepts checksum filter tags);
+    my @ordered_attributes = qw(title time published_filename guid comment
+        location concepts checksum filter tags published_image_filename);
     try {
         my $source_meta = $self->util->load_image_meta($self->source_file->stringify);
 
@@ -321,6 +335,14 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
+    if ($attributes{ published_image_filename }) {
+        $self->published_image_filename($attributes{ published_image_filename });
+
+    } else {
+        $attributes{ published_image_filename } = $self->published_image_filename();
+        $attributes_need_to_be_written_out = 1
+    }
+
     if ($attributes{ location } && %{$attributes{ location }}) {
         $self->exif_helper->geo_data($attributes{ location });
     }
@@ -354,15 +376,12 @@ sub _process_source_file {
         $self->image_alt($self->plerd->image_alt || '');
     }
 
-    my $published_filename_jpg = sprintf("%s-%s", $attributes{ 'guid' }, $attributes{ published_filename });
-    $published_filename_jpg =~ s/\.html?$/.jpeg/i;
+    my $published_image_path = File::Spec->catfile(
+        $self->plerd->publication_path, 'images', $self->published_image_filename);
 
-    my $target_jpg_file_path = File::Spec->catfile(
-        $self->plerd->publication_path, 'images', $published_filename_jpg);
+    if (-e $published_image_path && $attributes{ checksum }) {
 
-    if (-e $target_jpg_file_path && $attributes{ checksum }) {
-
-        my $fh = Path::Class::File->new($target_jpg_file_path);
+        my $fh = Path::Class::File->new($published_image_path);
         my $checksum = md5_hex($fh->slurp(iomode => '<:raw'));
         if ($checksum ne $attributes{ checksum }) {
             printf "checksum for '%s' has changed. On disk: <%s>, in '%s' meta: <%s>. Regenerating it usw.\n",
@@ -378,6 +397,23 @@ sub _process_source_file {
         $attributes_need_to_be_written_out = 1;
     }
 
+    if ($image_needs_to_be_published) {
+        # Here is where the magic happens
+        mkpath(File::Spec->catdir(
+            $self->plerd->publication_path, 'images'));
+
+        my $filtered_image = $self->_filtered_image;
+
+        $filtered_image->Set(compression => $self->image_compression);
+
+        my $fh = Path::Class::File->new($published_image_path);
+
+        $fh->spew(iomode => '>:raw', $filtered_image->ImageToBlob());
+
+        $attributes{ checksum } = md5_hex($filtered_image->ImageToBlob());
+    }
+
+
     $self->plerd->template->process(
         $self->instaplerd_template_file->open('<:encoding(utf8)'),
         {
@@ -389,35 +425,12 @@ sub _process_source_file {
             exif         => $self->exif_helper->exif_data,
             filter       => $attributes{ filter },
             location     => $attributes{ location }{ address } || undef,
-            uri          => File::Spec->catfile('/images', $published_filename_jpg),
+            uri          => File::Spec->catfile('/images', $self->published_image_filename),
             context_post => $self,
         },
         \$body,
     ) || $self->plerd->_throw_template_exception($self->instaplerd_template_file);
     $self->body($body);
-
-    if ($image_needs_to_be_published) {
-
-        my $destination_image = $self->_dest_image;
-
-        # Here is where the magic happens
-        mkpath(File::Spec->catdir(
-            $self->plerd->publication_path, 'images'));
-
-        my $filtered_image = $self->filter->apply($destination_image);
-
-        $filtered_image->Coalesce();
-        # Remove all image metadata before publication (after filter in case it uses it for something...)
-        $filtered_image->Strip();
-        $filtered_image->Set(compression => $self->image_compression);
-
-        # TODO: make path/ name more uniq
-        my $fh = Path::Class::File->new($target_jpg_file_path);
-        $fh->spew(iomode => '>:raw', $filtered_image->ImageToBlob());
-
-        $attributes{ checksum } = md5_hex($filtered_image->ImageToBlob());
-
-    }
 
     if ($attributes_need_to_be_written_out) {
         $self->util->save_image_meta(
@@ -455,7 +468,7 @@ sub _resize_image {
         sprintf "Resized image from [%sx%s] to %s [%sx%s]",
             $width, $height, $desired_resize, $image_to_resize->Get("height"), $image_to_resize->Get("width"));
 
-    if ($status){
+    if ($status) {
         $self->log->warn("unable to resize image to $desired_resize: $status");
     }
 
@@ -468,11 +481,9 @@ sub _crop_image {
     my $desired_width = shift || $self->width;
     my $desired_height = shift || $self->height;
 
-
-    my $desired_geometry = sprintf ("%sx%s", $desired_width, $desired_height);
+    my $desired_geometry = sprintf("%sx%s", $desired_width, $desired_height);
     $self->log->info(
         sprintf "Cropping to %s.", $desired_geometry);
-
 
     my $status = $image_to_crop->Crop(
         'gravity'  => 'Center',
@@ -486,7 +497,6 @@ sub _crop_image {
 
 sub _build__dest_image {
     my $self = shift;
-    my $status;
 
     my $destination_image = $self->source_image->Clone();
 
@@ -508,7 +518,16 @@ sub _build__dest_image {
         sprintf "Image dimensions after crop and resize are now %ix%i.",
             $nwidth, $nheight);
 
+    $destination_image->Coalesce();
+    # Remove all image metadata before publication (after filter in case it uses it for something...)
+    $destination_image->Strip();
+
     return $destination_image;
+}
+
+sub _build__filtered_image {
+    my $self = shift;
+    return $self->filter->apply($self->_dest_image);
 }
 
 sub _build_source_image {
@@ -521,5 +540,12 @@ sub _build_source_image {
 sub _build_filter {
     return shift->filter_loader->filter();
 }
+
+sub _build_published_image_filename {
+    my $self = shift;
+    return sprintf("%s-%s", $self->guid,
+        $self->published_filename =~ s/\.\Khtml?$/lc($self->_filtered_image()->Get('magick')) /ire);
+}
+
 
 1;
